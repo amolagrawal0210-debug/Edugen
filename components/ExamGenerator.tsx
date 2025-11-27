@@ -30,8 +30,8 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel }) => {
     try {
       const data = await generateExamPaper(syllabus, classLevel, subject, examType);
       setExam(data);
-    } catch (error) {
-      alert("Error creating exam.");
+    } catch (error: any) {
+      alert(error.message || "Error creating exam.");
     } finally {
       setLoading(false);
     }
@@ -48,7 +48,7 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel }) => {
     const printText = (text: string, x: number, yPos: number, maxWidth: number) => {
         const lines = doc.splitTextToSize(text, maxWidth);
         doc.text(lines, x, yPos);
-        return lines.length * 5; // Approximate height per line (line height 5)
+        return lines.length * 5; // Approximate height per line
     };
 
     // Header
@@ -101,37 +101,43 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel }) => {
         const element = document.getElementById(`exam-fig-${index}`);
         if (element) {
           try {
-            // Capture the SVG from DOM
-            const canvas = await html2canvas(element, { scale: 2, backgroundColor: null });
+            // Force white background for capture
+            const canvas = await html2canvas(element, { 
+              scale: 2, 
+              backgroundColor: '#ffffff',
+              logging: false,
+              useCORS: true 
+            });
             const imgData = canvas.toDataURL('image/png');
-            const imgWidth = 100;
+            const imgWidth = 80; // Reasonable width for figure
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
             
             // Check if image fits on page
             if (y + imgHeight > 280) {
               doc.addPage();
               y = 20;
-              doc.text(qNum, 10, y); // Reprint number on new page if figure pushed it
+              doc.text(qNum, 10, y); // Reprint number
             }
 
+            // Offset X to not overlap question number
             doc.addImage(imgData, 'PNG', 20, y, imgWidth, imgHeight);
             y += imgHeight + 5;
             
             doc.setFontSize(9);
-            doc.text(`Fig. for Q${index + 1}`, 20, y - 2);
+            doc.setTextColor(100);
+            doc.text(`Figure for Q${index + 1}`, 20, y - 2);
+            doc.setTextColor(0);
             doc.setFontSize(11);
           } catch (e) {
-            // Fallback to box if capture fails
             console.error("Figure capture failed", e);
-            doc.rect(20, y, 100, 40);
-            doc.text("Figure Missing (Render Error)", 25, y + 20);
-            y += 45;
+            doc.rect(20, y, 100, 30);
+            doc.text("[Figure could not be rendered]", 25, y + 15);
+            y += 35;
           }
         } else {
-           // Element not found in DOM (should not happen if rendered)
-           doc.rect(20, y, 100, 40);
-           doc.text("Refer to Web View for Figure", 25, y + 20);
-           y += 45;
+           doc.rect(20, y, 100, 30);
+           doc.text("[Figure not found in view]", 25, y + 15);
+           y += 35;
         }
       } else if (q.figureDescription) {
         // Text only description

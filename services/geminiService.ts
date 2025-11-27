@@ -2,38 +2,47 @@ import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { StudyNote, ExamPaper, AnalyticsData, QuestionType, Difficulty, ExamType } from "../types";
 
 // Initialize Gemini Client safely for both Vite (Vercel) and other environments
-const getApiKey = () => {
+const getApiKey = (): string => {
   try {
-    // Check for Vite environment variable
+    // 1. Vite Environment (Standard for this project)
     // @ts-ignore
-    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_KEY) {
+    if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_KEY) {
       // @ts-ignore
       return import.meta.env.VITE_API_KEY;
     }
-  } catch (e) {
-    // ignore
-  }
-  try {
-    // Check for standard process.env
-    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-      return process.env.API_KEY;
+    
+    // 2. Next.js / Generic Node Environment
+    if (typeof process !== 'undefined' && process.env) {
+      if (process.env.API_KEY) return process.env.API_KEY;
+      if (process.env.NEXT_PUBLIC_API_KEY) return process.env.NEXT_PUBLIC_API_KEY;
     }
   } catch (e) {
-    // ignore
+    console.warn("Error accessing environment variables", e);
   }
+  
+  // Return empty string to prevent constructor crash, check in function calls
   return '';
 };
 
-const ai = new GoogleGenAI({ apiKey: getApiKey() });
+const apiKey = getApiKey();
+const ai = new GoogleGenAI({ apiKey: apiKey || 'dummy_key_to_init' });
 
 // Constants for Models
 const MODEL_TEXT = 'gemini-2.5-flash';
+
+// Helper to validate key before calling
+const validateKey = () => {
+  if (!apiKey || apiKey === 'dummy_key_to_init') {
+    throw new Error("API Key is missing. Please set VITE_API_KEY in your Vercel Environment Variables.");
+  }
+};
 
 export const generateStudyNotes = async (
   topic: string,
   classLevel: string,
   subject: string
 ): Promise<StudyNote> => {
+  validateKey();
   const prompt = `
     Act as "EduGen", a Gen-Z friendly, expert CBSE teacher.
     Create "Teacher Science Full Notes" style content for:
@@ -162,6 +171,7 @@ export const generateExamPaper = async (
   subject: string,
   examType: ExamType
 ): Promise<ExamPaper> => {
+  validateKey();
   
   const isMajorExam = examType === ExamType.HALF_YEARLY || examType === ExamType.ANNUAL;
   const syllabusText = examType === ExamType.ANNUAL ? "Full Syllabus" : syllabus;
@@ -267,6 +277,7 @@ export const generateExamPaper = async (
 export const analyzeStudentPerformance = async (
   studentInput: string
 ): Promise<AnalyticsData[]> => {
+  validateKey();
   const prompt = `
     Analyze student reflection/quiz: "${studentInput}"
     Generate Knowledge Heatmap (Subjects, Mastery 0-100, Strong/Weak topics).

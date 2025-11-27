@@ -21,8 +21,8 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel }) => {
     try {
       const data = await generateStudyNotes(topic, classLevel, subject);
       setNote(data);
-    } catch (error) {
-      alert("Failed to generate notes. Please check your API key or try again.");
+    } catch (error: any) {
+      alert(error.message || "Failed to generate notes. Please check your API key or try again.");
     } finally {
       setLoading(false);
     }
@@ -44,6 +44,13 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel }) => {
       return false;
     };
 
+    // Helper to estimate height
+    const getLinesHeight = (text: string, fontSize: number, width: number) => {
+      doc.setFontSize(fontSize);
+      const lines = doc.splitTextToSize(text, width);
+      return { lines, height: lines.length * (fontSize * 0.5) + 2 }; // approx height multiplier
+    };
+
     // Title
     doc.setFontSize(22);
     doc.setTextColor(22, 163, 74); // Edu Green
@@ -59,14 +66,14 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel }) => {
     y += 15;
 
     // Intro Box
-    doc.setFillColor(240, 255, 240);
-    doc.rect(15, y, pageWidth - 30, 25, 'F');
-    doc.setFontSize(11);
-    doc.setTextColor(0);
     doc.setFont("helvetica", "italic");
-    const introLines = doc.splitTextToSize(note.intro, pageWidth - 40);
+    const { lines: introLines, height: introHeight } = getLinesHeight(note.intro, 11, pageWidth - 40);
+    
+    doc.setFillColor(240, 255, 240);
+    doc.rect(15, y, pageWidth - 30, introHeight + 10, 'F');
+    doc.setTextColor(0);
     doc.text(introLines, 20, y + 8);
-    y += 35;
+    y += introHeight + 20;
 
     // Sections
     note.sections.forEach((section, idx) => {
@@ -77,16 +84,15 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel }) => {
       doc.setTextColor(0);
       doc.setFont("helvetica", "bold");
       doc.text(`${idx + 1}. ${section.title}`, 15, y);
-      y += 8;
+      y += 10;
 
       // Content
-      doc.setFontSize(11);
       doc.setFont("helvetica", "normal");
       section.content.forEach((point) => {
-        const lines = doc.splitTextToSize(`• ${point}`, pageWidth - 35);
-        checkPageBreak(lines.length * 5);
+        const { lines, height } = getLinesHeight(`• ${point}`, 11, pageWidth - 35);
+        checkPageBreak(height);
         doc.text(lines, 20, y);
-        y += lines.length * 5 + 2;
+        y += height + 2;
       });
       y += 5;
 
@@ -97,26 +103,27 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel }) => {
         
         // Header
         doc.setFillColor(22, 163, 74);
-        doc.rect(20, y, pageWidth - 40, 8, 'F');
+        doc.rect(20, y, pageWidth - 40, 10, 'F');
         doc.setTextColor(255);
         doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
         section.table.headers.forEach((h, i) => {
-          doc.text(h, 22 + (i * colWidth), y + 6);
+          doc.text(h, 22 + (i * colWidth), y + 7);
         });
-        y += 8;
+        y += 10;
 
         // Rows
         doc.setTextColor(0);
         doc.setFont("helvetica", "normal");
         
         section.table.rows.forEach((row, rIdx) => {
-          // Calculate Row Height based on Content
-          let maxRowHeight = 8;
-          const cellLinesArray = row.map((cell) => doc.splitTextToSize(cell, colWidth - 4));
-          
-          cellLinesArray.forEach(lines => {
-             const h = lines.length * 5 + 4; // 5 per line + padding
+          // Calculate Row Height dynamically
+          let maxRowHeight = 10;
+          const rowData = row.map((cell) => {
+             const { lines } = getLinesHeight(cell, 10, colWidth - 4);
+             const h = lines.length * 5 + 4;
              if (h > maxRowHeight) maxRowHeight = h;
+             return lines;
           });
 
           checkPageBreak(maxRowHeight);
@@ -127,8 +134,8 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel }) => {
           
           doc.rect(20, y, pageWidth - 40, maxRowHeight, 'F');
           
-          row.forEach((_, cIdx) => {
-             doc.text(cellLinesArray[cIdx], 22 + (cIdx * colWidth), y + 5);
+          rowData.forEach((lines, cIdx) => {
+             doc.text(lines, 22 + (cIdx * colWidth), y + 5);
           });
           
           y += maxRowHeight;
@@ -139,21 +146,45 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel }) => {
 
     // Mnemonics
     if (note.mnemonics.length > 0) {
-      checkPageBreak(40);
-      const mnHeight = 10 + (note.mnemonics.length * 15); // approximate
-      doc.setFillColor(255, 250, 205); // Light yellow
-      doc.rect(15, y, pageWidth - 30, mnHeight, 'F');
+      checkPageBreak(50);
+      let mnY = y;
+      
       doc.setFontSize(12);
       doc.setTextColor(180, 83, 9); // Brownish
       doc.setFont("helvetica", "bold");
+      doc.text("Memory Hacks / Mnemonics", 20, mnY + 8);
+      mnY += 12;
+      
+      doc.setFontSize(11);
+      doc.setTextColor(0);
+      doc.setFont("helvetica", "normal");
+      
+      let mnContentHeight = 12;
+      
+      note.mnemonics.forEach(m => {
+        const { lines, height } = getLinesHeight(`${m.name}: ${m.description}`, 11, pageWidth - 40);
+        mnContentHeight += height + 4;
+      });
+
+      // Draw background rect first
+      doc.setFillColor(255, 250, 205); 
+      doc.rect(15, y, pageWidth - 30, mnContentHeight, 'F');
+      
+      // Redraw title on top of rect
+      doc.setFontSize(12);
+      doc.setTextColor(180, 83, 9);
+      doc.setFont("helvetica", "bold");
       doc.text("Memory Hacks / Mnemonics", 20, y + 8);
+      
       y += 12;
       doc.setFontSize(11);
       doc.setTextColor(0);
       doc.setFont("helvetica", "normal");
+
       note.mnemonics.forEach(m => {
-        doc.text(`${m.name}: ${m.description}`, 20, y);
-        y += 8;
+        const { lines, height } = getLinesHeight(`${m.name}: ${m.description}`, 11, pageWidth - 40);
+        doc.text(lines, 20, y + 5);
+        y += height + 4;
       });
       y += 10;
     }
@@ -170,17 +201,17 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel }) => {
     doc.setFont("helvetica", "normal");
     
     note.practiceQuestions.forEach((q, i) => {
-       const qLines = doc.splitTextToSize(`Q${i+1}: ${q.question}`, pageWidth - 35);
-       checkPageBreak(qLines.length * 5);
+       const { lines: qLines, height: qH } = getLinesHeight(`Q${i+1}: ${q.question}`, 11, pageWidth - 35);
+       checkPageBreak(qH);
        doc.text(qLines, 20, y);
-       y += qLines.length * 5 + 2;
+       y += qH + 2;
        
-       const aLines = doc.splitTextToSize(`Ans: ${q.answer}`, pageWidth - 35);
-       checkPageBreak(aLines.length * 5);
+       const { lines: aLines, height: aH } = getLinesHeight(`Ans: ${q.answer}`, 11, pageWidth - 35);
+       checkPageBreak(aH);
        doc.setTextColor(100);
        doc.text(aLines, 20, y);
        doc.setTextColor(0);
-       y += aLines.length * 5 + 5;
+       y += aH + 5;
     });
 
     doc.save(`${note.topic}_Notes.pdf`);
