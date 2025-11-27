@@ -1,8 +1,30 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { StudyNote, ExamPaper, AnalyticsData, QuestionType, Difficulty, ExamType } from "../types";
 
-// Initialize Gemini Client
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Initialize Gemini Client safely for both Vite (Vercel) and other environments
+const getApiKey = () => {
+  try {
+    // Check for Vite environment variable
+    // @ts-ignore
+    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_KEY) {
+      // @ts-ignore
+      return import.meta.env.VITE_API_KEY;
+    }
+  } catch (e) {
+    // ignore
+  }
+  try {
+    // Check for standard process.env
+    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+      return process.env.API_KEY;
+    }
+  } catch (e) {
+    // ignore
+  }
+  return '';
+};
+
+const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 // Constants for Models
 const MODEL_TEXT = 'gemini-2.5-flash';
@@ -142,7 +164,6 @@ export const generateExamPaper = async (
 ): Promise<ExamPaper> => {
   
   const isMajorExam = examType === ExamType.HALF_YEARLY || examType === ExamType.ANNUAL;
-  const targetMarks = isMajorExam ? 80 : 20;
   const syllabusText = examType === ExamType.ANNUAL ? "Full Syllabus" : syllabus;
 
   let structureInstruction = "";
@@ -189,7 +210,7 @@ export const generateExamPaper = async (
 
     **SPEED & OPTIMIZATION RULES**:
     1. **Be Concise**: Question text should be clear but not unnecessarily long.
-    2. **Figures**: Provide 'figureSVG' (valid simple SVG string) ONLY for Geometry/Graph/Circuit questions where essential. 
+    2. **Figures**: Provide 'figureSVG' (valid simple SVG string inside <svg> tag) ONLY for Geometry/Graph/Circuit questions where essential. 
     3. **Schema**: Adhere strictly to the JSON structure.
     
     Return JSON.
@@ -231,7 +252,6 @@ export const generateExamPaper = async (
       config: {
         responseMimeType: "application/json",
         responseSchema: schema,
-        // thinkingConfig: { thinkingBudget: 0 } // Optimization for speed if model supports
       }
     });
 

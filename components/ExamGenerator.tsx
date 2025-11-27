@@ -4,6 +4,7 @@ import { ExamPaper, QuestionType, Difficulty, ExamType } from '../types';
 import { Button, Card, Input, Select, LoadingSpinner, Badge } from './UIComponents';
 import { FileQuestion, CheckCircle, Brain, AlertTriangle, Book, Calendar, Download, ImageIcon } from 'lucide-react';
 import { jsPDF } from "jspdf";
+import html2canvas from 'html2canvas';
 
 interface ExamGeneratorProps {
   classLevel: string;
@@ -36,7 +37,7 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel }) => {
     }
   };
 
-  const downloadPDF = () => {
+  const downloadPDF = async () => {
     if (!exam) return;
 
     const doc = new jsPDF();
@@ -70,7 +71,9 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel }) => {
 
     let currentSection = "";
 
-    exam.questions.forEach((q, index) => {
+    for (let index = 0; index < exam.questions.length; index++) {
+      const q = exam.questions[index];
+
       // Page Break Check (Conservative)
       if (y > 250) {
         doc.addPage();
@@ -93,35 +96,51 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel }) => {
       const qNum = `${index + 1}.`;
       doc.text(qNum, 10, y);
 
-      // 2. Render Figure IF Exists (Box Placeholder) for PDF
-      // Note: SVGs from web view cannot be easily rendered in jsPDF without extensions.
-      // We fall back to the text description and a placeholder box.
-      if (q.figureDescription || q.figureSVG) {
-        const figHeight = 40;
-        
-        // Draw Figure Box
-        doc.setDrawColor(0);
-        doc.rect(20, y, 100, figHeight); // x, y, w, h
-        
-        // Label inside figure
-        doc.setFontSize(8);
+      // 2. Render Figure (SVG or Placeholder)
+      if (q.figureSVG) {
+        const element = document.getElementById(`exam-fig-${index}`);
+        if (element) {
+          try {
+            // Capture the SVG from DOM
+            const canvas = await html2canvas(element, { scale: 2, backgroundColor: null });
+            const imgData = canvas.toDataURL('image/png');
+            const imgWidth = 100;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            
+            // Check if image fits on page
+            if (y + imgHeight > 280) {
+              doc.addPage();
+              y = 20;
+              doc.text(qNum, 10, y); // Reprint number on new page if figure pushed it
+            }
+
+            doc.addImage(imgData, 'PNG', 20, y, imgWidth, imgHeight);
+            y += imgHeight + 5;
+            
+            doc.setFontSize(9);
+            doc.text(`Fig. for Q${index + 1}`, 20, y - 2);
+            doc.setFontSize(11);
+          } catch (e) {
+            // Fallback to box if capture fails
+            console.error("Figure capture failed", e);
+            doc.rect(20, y, 100, 40);
+            doc.text("Figure Missing (Render Error)", 25, y + 20);
+            y += 45;
+          }
+        } else {
+           // Element not found in DOM (should not happen if rendered)
+           doc.rect(20, y, 100, 40);
+           doc.text("Refer to Web View for Figure", 25, y + 20);
+           y += 45;
+        }
+      } else if (q.figureDescription) {
+        // Text only description
+        const descText = `[Figure: ${q.figureDescription}]`;
+        const descLines = doc.splitTextToSize(descText, pageWidth - 35);
         doc.setTextColor(100);
-        doc.text("FIGURE / DIAGRAM", 22, y + 5);
-        
-        // Description of figure (wrapped inside box)
-        const descText = q.figureDescription || "Refer to the diagram in the web application.";
-        const descLines = doc.splitTextToSize(descText, 90);
-        doc.text(descLines, 22, y + 10);
-        
-        doc.setTextColor(0); // Reset color
-        doc.setFontSize(11); // Reset font
-        
-        y += figHeight + 5; // Move Y down past the figure
-        
-        // Add label under figure as requested: "Question No. X"
-        doc.setFontSize(9);
-        doc.text(`Fig. for Q${index + 1}`, 20, y - 2);
-        doc.setFontSize(11);
+        doc.text(descLines, 20, y);
+        doc.setTextColor(0);
+        y += descLines.length * 5 + 2;
       }
 
       // 3. Render Question Text
@@ -140,7 +159,7 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel }) => {
       } else {
         y += 4;
       }
-    });
+    }
 
     doc.save(`${subject}_Class${classLevel}_Exam.pdf`);
   };
@@ -274,10 +293,13 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel }) => {
                   </div>
                 </div>
 
-                {/* VISUAL SVG RENDERER */}
+                {/* VISUAL SVG RENDERER with ID for Capture */}
                 {q.figureSVG && (
                   <div className="mb-6 mt-2">
-                    <div className="bg-white rounded-lg p-4 overflow-hidden flex justify-center border-2 border-neutral-700">
+                    <div 
+                      id={`exam-fig-${index}`} 
+                      className="bg-white rounded-lg p-4 overflow-hidden flex justify-center border-2 border-neutral-700 w-fit mx-auto"
+                    >
                       <div 
                         className="w-full max-w-[400px]"
                         dangerouslySetInnerHTML={{ __html: q.figureSVG }} 
@@ -287,7 +309,7 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel }) => {
                   </div>
                 )}
                 
-                {/* Fallback Text Description if no SVG but description exists (unlikely given prompt) or generic use */}
+                {/* Fallback Text Description */}
                 {!q.figureSVG && q.figureDescription && (
                    <div className="mb-4 bg-black border border-dashed border-gray-700 p-4 rounded-lg flex items-start gap-3">
                     <ImageIcon className="text-gray-500 mt-1" />

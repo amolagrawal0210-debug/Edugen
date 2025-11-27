@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { generateStudyNotes } from '../services/geminiService';
 import { StudyNote } from '../types';
 import { Button, Card, Input, Select, LoadingSpinner, Badge } from './UIComponents';
-import { BookOpen, Video, Share2, Printer, Brain, HelpCircle, Lightbulb } from 'lucide-react';
+import { BookOpen, Printer, Brain, HelpCircle, Lightbulb } from 'lucide-react';
 import { jsPDF } from "jspdf";
 
 interface NotesGeneratorProps {
@@ -108,18 +108,30 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel }) => {
         // Rows
         doc.setTextColor(0);
         doc.setFont("helvetica", "normal");
+        
         section.table.rows.forEach((row, rIdx) => {
-          checkPageBreak(10);
+          // Calculate Row Height based on Content
+          let maxRowHeight = 8;
+          const cellLinesArray = row.map((cell) => doc.splitTextToSize(cell, colWidth - 4));
+          
+          cellLinesArray.forEach(lines => {
+             const h = lines.length * 5 + 4; // 5 per line + padding
+             if (h > maxRowHeight) maxRowHeight = h;
+          });
+
+          checkPageBreak(maxRowHeight);
+
           // Alternating row color
           if (rIdx % 2 === 0) doc.setFillColor(245, 245, 245);
           else doc.setFillColor(255, 255, 255);
           
-          doc.rect(20, y, pageWidth - 40, 8, 'F');
+          doc.rect(20, y, pageWidth - 40, maxRowHeight, 'F');
           
-          row.forEach((cell, cIdx) => {
-             doc.text(cell, 22 + (cIdx * colWidth), y + 6);
+          row.forEach((_, cIdx) => {
+             doc.text(cellLinesArray[cIdx], 22 + (cIdx * colWidth), y + 5);
           });
-          y += 8;
+          
+          y += maxRowHeight;
         });
         y += 10;
       }
@@ -128,8 +140,9 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel }) => {
     // Mnemonics
     if (note.mnemonics.length > 0) {
       checkPageBreak(40);
+      const mnHeight = 10 + (note.mnemonics.length * 15); // approximate
       doc.setFillColor(255, 250, 205); // Light yellow
-      doc.rect(15, y, pageWidth - 30, 10 + (note.mnemonics.length * 10), 'F');
+      doc.rect(15, y, pageWidth - 30, mnHeight, 'F');
       doc.setFontSize(12);
       doc.setTextColor(180, 83, 9); // Brownish
       doc.setFont("helvetica", "bold");
@@ -158,9 +171,12 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel }) => {
     
     note.practiceQuestions.forEach((q, i) => {
        const qLines = doc.splitTextToSize(`Q${i+1}: ${q.question}`, pageWidth - 35);
+       checkPageBreak(qLines.length * 5);
        doc.text(qLines, 20, y);
        y += qLines.length * 5 + 2;
+       
        const aLines = doc.splitTextToSize(`Ans: ${q.answer}`, pageWidth - 35);
+       checkPageBreak(aLines.length * 5);
        doc.setTextColor(100);
        doc.text(aLines, 20, y);
        doc.setTextColor(0);
