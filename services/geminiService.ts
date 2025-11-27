@@ -40,21 +40,33 @@ const validateKey = () => {
 export const generateStudyNotes = async (
   topic: string,
   classLevel: string,
-  subject: string
+  subject: string,
+  language: string = 'English'
 ): Promise<StudyNote> => {
   validateKey();
+  
+  // Force Hindi language if the subject itself is Hindi
+  const effectiveLanguage = subject.toLowerCase() === 'hindi' ? 'Hindi' : language;
+
+  const langInstruction = effectiveLanguage === 'Hindi' 
+    ? "**CRITICAL: GENERATE ALL CONTENT IN HINDI LANGUAGE (Devanagari Script).** You can use English technical terms in brackets like 'कोशिका (Cell)'. The Intro hook should be in natural conversational Hindi (e.g., 'भाई, यह टॉपिक...')." 
+    : "Generate content in English.";
+
   const prompt = `
     Act as "EduGen", a Gen-Z friendly, expert CBSE teacher.
-    Create "Teacher Science Full Notes" style content for:
+    Create "Teacher Science Full Notes" style content.
+    ${langInstruction}
+    
+    Details:
     Class: ${classLevel}
     Subject: ${subject}
     Topic: ${topic}
 
     **Style Guide (Strictly Follow):**
-    1. **Intro Hook**: Start with a conversational, friendly intro (Hinglish/English mix allowed for flavor, e.g., "Bhai, yeh topic..."). Explain why it matters.
+    1. **Intro Hook**: Start with a conversational, friendly intro. Explain why it matters.
     2. **High Density Content**: Use bullet points.
-    3. **Comparison Tables**: ALWAYS include at least one comparison table (e.g., Plant vs Animal Cell, Mass vs Weight).
-    4. **Memory Hacks**: Include a "Mnemonics/Tricks" section (e.g., "NaKa Silver Cup").
+    3. **Comparison Tables**: ALWAYS include at least one comparison table.
+    4. **Memory Hacks**: Include a "Mnemonics/Tricks" section.
     5. **IST (It's a Sawal Time)**: A section with 3-4 short Q&A for practice.
     6. **MCQs**: 3-4 practice MCQs.
     7. **Visuals**: Keep descriptions vivid.
@@ -169,16 +181,33 @@ export const generateExamPaper = async (
   syllabus: string,
   classLevel: string,
   subject: string,
-  examType: ExamType
+  examType: ExamType,
+  language: string = 'English'
 ): Promise<ExamPaper> => {
   validateKey();
   
   const isMajorExam = examType === ExamType.HALF_YEARLY || examType === ExamType.ANNUAL;
   const syllabusText = examType === ExamType.ANNUAL ? "Full Syllabus" : syllabus;
+  
+  // Force Hindi language if the subject itself is Hindi
+  const effectiveLanguage = subject.toLowerCase() === 'hindi' ? 'Hindi' : language;
+
+  const langInstruction = effectiveLanguage === 'Hindi'
+    ? "**CRITICAL: GENERATE THE ENTIRE EXAM PAPER IN HINDI (Devanagari Script).** All questions, options, and instructions must be in Hindi. Use standard CBSE Hindi terminology."
+    : "Generate the exam paper in English.";
 
   let structureInstruction = "";
 
-  if (isMajorExam) {
+  if (subject.toLowerCase() === 'hindi') {
+    structureInstruction = `
+      Paper Pattern (80 Marks) for Hindi:
+      - Sec A: Reading Skills (Unseen Passages) - MCQs.
+      - Sec B: Grammar (Vyakaran) - MCQs/VSA.
+      - Sec C: Literature (Textbook) - Q&A (SA/LA).
+      - Sec D: Creative Writing (Lekhan) - Long Answer (Essay/Letter).
+      Ensure strict adherence to CBSE Hindi pattern.
+    `;
+  } else if (isMajorExam) {
     if (subject.toLowerCase() === 'mathematics') {
       structureInstruction = `
         Paper Pattern (80 Marks):
@@ -215,6 +244,7 @@ export const generateExamPaper = async (
     Generate a CBSE 2025-26 Exam Paper.
     Class: ${classLevel}, Subject: ${subject}, Type: ${examType}
     Syllabus: ${syllabusText}
+    ${langInstruction}
     
     ${structureInstruction}
 

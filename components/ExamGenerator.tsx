@@ -13,6 +13,7 @@ interface ExamGeneratorProps {
 const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel }) => {
   const [subject, setSubject] = useState('Mathematics');
   const [examType, setExamType] = useState<ExamType>(ExamType.PT1);
+  const [language, setLanguage] = useState('English');
   const [syllabus, setSyllabus] = useState('');
   const [exam, setExam] = useState<ExamPaper | null>(null);
   const [loading, setLoading] = useState(false);
@@ -28,7 +29,7 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel }) => {
     setExam(null);
     setShowAnswers(false);
     try {
-      const data = await generateExamPaper(syllabus, classLevel, subject, examType);
+      const data = await generateExamPaper(syllabus, classLevel, subject, examType, language);
       setExam(data);
     } catch (error: any) {
       alert(error.message || "Error creating exam.");
@@ -40,6 +41,61 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel }) => {
   const downloadPDF = async () => {
     if (!exam) return;
 
+    // Use HTML Capture for Hindi (Language) or Hindi (Subject) to preserve fonts
+    if (language === 'Hindi' || subject === 'Hindi') {
+      const element = document.getElementById('exam-paper-container');
+      if (!element) return;
+
+      try {
+        // Temporarily ensure background is white for capture
+        const originalBg = element.style.backgroundColor;
+        element.style.backgroundColor = '#ffffff';
+        element.style.color = '#000000';
+        element.classList.add('pdf-capture-mode'); // Could be used for CSS overrides
+
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          backgroundColor: '#ffffff',
+          useCORS: true,
+          logging: false
+        });
+
+        // Revert styles
+        element.style.backgroundColor = originalBg;
+        element.style.color = '';
+        element.classList.remove('pdf-capture-mode');
+
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        
+        // Calculate height for full width
+        const imgHeightInPdf = (imgHeight * pdfWidth) / imgWidth;
+        let heightLeft = imgHeightInPdf;
+        let position = 0;
+
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeightInPdf);
+        heightLeft -= pdfHeight;
+
+        while (heightLeft >= 0) {
+          position = heightLeft - imgHeightInPdf;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeightInPdf);
+          heightLeft -= pdfHeight;
+        }
+
+        pdf.save(`${subject}_Hindi_Exam.pdf`);
+      } catch (e) {
+        console.error("Hindi PDF Gen Error", e);
+        alert("Failed to generate Hindi PDF");
+      }
+      return;
+    }
+
+    // Default English Generation (Text Based)
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     let y = 15;
@@ -201,10 +257,14 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
            <div className="space-y-2">
              <label className="text-sm text-gray-400 font-semibold">Subject & Class</label>
-             <div className="grid grid-cols-2 gap-4">
+             <div className="grid grid-cols-3 gap-4">
                 <div className="bg-neutral-900 border border-edu-border/50 rounded-lg p-3 flex items-center justify-center text-gray-400 font-semibold cursor-not-allowed">
                   Class {classLevel}
                 </div>
+                <Select value={language} onChange={(e) => setLanguage(e.target.value)}>
+                  <option value="English">English</option>
+                  <option value="Hindi">Hindi (Medium)</option>
+                </Select>
                 <Select value={subject} onChange={(e) => setSubject(e.target.value)}>
                    <option value="Mathematics">Mathematics</option>
                    <option value="Physics">Physics</option>
@@ -216,6 +276,7 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel }) => {
                    <option value="Social Science">Social Science</option>
                    <option value="Accountancy">Accountancy</option>
                    <option value="Business Studies">Business Studies</option>
+                   <option value="Hindi">Hindi</option>
                 </Select>
              </div>
            </div>
@@ -258,12 +319,13 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel }) => {
       {loading && <LoadingSpinner />}
 
       {exam && !loading && (
-        <div className="animate-fade-in space-y-6">
+        <div id="exam-paper-container" className="animate-fade-in space-y-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-edu-card border border-edu-border p-6 rounded-xl">
             <div>
               <div className="flex items-center gap-3 mb-1">
                  <h2 className="text-2xl font-bold text-white uppercase tracking-wider">{exam.title}</h2>
                  <Badge type="neutral">{subject}</Badge>
+                 {(language === 'Hindi' || subject === 'Hindi') && <Badge type="warning">हिंदी माध्यम</Badge>}
               </div>
               <p className="text-gray-400 mt-1 flex items-center gap-4">
                 <span className="flex items-center gap-1"><CheckCircle size={14}/> Total Marks: <span className="text-edu-primary font-bold">{exam.totalMarks}</span></span>

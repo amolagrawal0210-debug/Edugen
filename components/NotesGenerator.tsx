@@ -4,6 +4,7 @@ import { StudyNote } from '../types';
 import { Button, Card, Input, Select, LoadingSpinner, Badge } from './UIComponents';
 import { BookOpen, Printer, Brain, HelpCircle, Lightbulb } from 'lucide-react';
 import { jsPDF } from "jspdf";
+import html2canvas from 'html2canvas';
 
 interface NotesGeneratorProps {
   classLevel: string;
@@ -12,6 +13,7 @@ interface NotesGeneratorProps {
 const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel }) => {
   const [topic, setTopic] = useState('');
   const [subject, setSubject] = useState('Physics');
+  const [language, setLanguage] = useState('English');
   const [loading, setLoading] = useState(false);
   const [note, setNote] = useState<StudyNote | null>(null);
 
@@ -19,7 +21,7 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel }) => {
     if (!topic) return;
     setLoading(true);
     try {
-      const data = await generateStudyNotes(topic, classLevel, subject);
+      const data = await generateStudyNotes(topic, classLevel, subject, language);
       setNote(data);
     } catch (error: any) {
       alert(error.message || "Failed to generate notes. Please check your API key or try again.");
@@ -28,9 +30,55 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel }) => {
     }
   };
 
-  const downloadNotesPDF = () => {
+  const downloadNotesPDF = async () => {
     if (!note) return;
 
+    // Use Image-based generation for Hindi or Hindi Subject to preserve font rendering
+    if (language === 'Hindi' || subject === 'Hindi') {
+      const element = document.getElementById('note-content-container');
+      if (!element) return;
+
+      try {
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          backgroundColor: '#000000', // Capture dark theme correctly or set to white if preferred
+          useCORS: true,
+          logging: false
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+        
+        // Calculate height for full width
+        const imgHeightInPdf = (imgHeight * pdfWidth) / imgWidth;
+        let heightLeft = imgHeightInPdf;
+        let position = 0;
+
+        // Multi-page logic for long notes
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeightInPdf);
+        heightLeft -= pdfHeight;
+
+        while (heightLeft >= 0) {
+          position = heightLeft - imgHeightInPdf;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeightInPdf);
+          heightLeft -= pdfHeight;
+        }
+
+        pdf.save(`${note.topic}_Hindi_Notes.pdf`);
+      } catch (err) {
+        console.error("PDF Gen Error", err);
+        alert("Could not generate Hindi PDF.");
+      }
+      return;
+    }
+
+    // Default English Text-Based PDF (Better Selectability)
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     let y = 20;
@@ -224,11 +272,15 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel }) => {
           <BookOpen className="text-edu-primary" />
           Generate AI Power Notes
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="md:col-span-1 bg-neutral-900 border border-edu-border/50 rounded-lg p-3 flex items-center justify-center text-gray-400 font-semibold cursor-not-allowed">
             Class {classLevel}
           </div>
-          <Select value={subject} onChange={(e) => setSubject(e.target.value)}>
+          <Select value={language} onChange={(e) => setLanguage(e.target.value)} className="md:col-span-1">
+            <option value="English">English</option>
+            <option value="Hindi">Hindi (Medium)</option>
+          </Select>
+          <Select value={subject} onChange={(e) => setSubject(e.target.value)} className="md:col-span-1">
             <option value="Physics">Physics</option>
             <option value="Chemistry">Chemistry</option>
             <option value="Mathematics">Mathematics</option>
@@ -236,18 +288,19 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel }) => {
             <option value="Computer Science">Computer Science</option>
             <option value="English">English</option>
             <option value="Social Science">Social Science</option>
+            <option value="Hindi">Hindi</option>
           </Select>
           <Input 
             placeholder="Enter Topic (e.g., Ray Optics)" 
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
-            className="md:col-span-1"
+            className="md:col-span-2"
           />
-          <div className="flex flex-col gap-1">
-            <Button onClick={handleGenerate} disabled={loading || !topic} className="w-full">
+          <div className="md:col-span-5 flex flex-col items-center gap-1">
+            <Button onClick={handleGenerate} disabled={loading || !topic} className="w-full md:w-1/2">
               {loading ? 'Processing...' : 'Generate Notes'}
             </Button>
-            <span className="text-[10px] text-gray-500 font-mono text-center">Estimated time: ~10-20s</span>
+            <span className="text-[10px] text-gray-500 font-mono">Estimated time: ~10-20s</span>
           </div>
         </div>
       </Card>
@@ -255,7 +308,7 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel }) => {
       {loading && <LoadingSpinner />}
 
       {note && !loading && (
-        <div className="animate-fade-in space-y-6">
+        <div id="note-content-container" className="animate-fade-in space-y-6 bg-black p-4 md:p-0">
           {/* Header */}
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-3xl font-extrabold text-edu-primary tracking-tight">{note.topic}</h1>
