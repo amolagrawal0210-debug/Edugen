@@ -243,9 +243,12 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel }) => {
             onChange={(e) => setTopic(e.target.value)}
             className="md:col-span-1"
           />
-          <Button onClick={handleGenerate} disabled={loading || !topic}>
-            {loading ? 'Processing...' : 'Generate Notes'}
-          </Button>
+          <div className="flex flex-col gap-1">
+            <Button onClick={handleGenerate} disabled={loading || !topic} className="w-full">
+              {loading ? 'Processing...' : 'Generate Notes'}
+            </Button>
+            <span className="text-[10px] text-gray-500 font-mono text-center">Estimated time: ~10-20s</span>
+          </div>
         </div>
       </Card>
 

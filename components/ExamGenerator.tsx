@@ -247,10 +247,11 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel }) => {
            </div>
         </div>
 
-        <div className="flex justify-end">
+        <div className="flex flex-col items-end gap-1">
            <Button onClick={handleCreate} disabled={loading || (!syllabus && !isFullSyllabus)}>
              {loading ? 'Designing Paper...' : 'Generate Exam Paper'}
            </Button>
+           <span className="text-[10px] text-gray-500 font-mono">Estimated time: ~20-40s</span>
         </div>
       </Card>
 

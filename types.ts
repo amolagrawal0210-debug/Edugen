@@ -74,3 +74,15 @@ export interface SyllabusItem {
   weightage: number;
   completion: number;
 }
+
+export interface MathSolution {
+  problemStatement: string;
+  steps: { 
+    stepTitle: string; 
+    description: string; 
+    equation?: string; 
+  }[];
+  finalAnswer: string;
+  keyTips: string[];
+  commonErrors: string[];
+}

@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
-import { StudyNote, ExamPaper, AnalyticsData, QuestionType, Difficulty, ExamType } from "../types";
+import { StudyNote, ExamPaper, AnalyticsData, QuestionType, Difficulty, ExamType, MathSolution } from "../types";
 
 // Initialize Gemini Client safely for both Vite (Vercel) and other environments
 const getApiKey = (): string => {
@@ -270,6 +270,79 @@ export const generateExamPaper = async (
     return JSON.parse(text) as ExamPaper;
   } catch (error) {
     console.error("Error generating exam:", error);
+    throw error;
+  }
+};
+
+export const solveMathProblem = async (
+  problemText: string,
+  imageBase64?: string
+): Promise<MathSolution> => {
+  validateKey();
+
+  const prompt = `
+    You are an expert Math Tutor for CBSE students.
+    Solve this problem step-by-step.
+    
+    Structure the response to be educational, not just the answer.
+    Include:
+    1. Clear Step-by-Step explanation.
+    2. "Key Tips to Remember" (Pro tips for exams).
+    3. "Commonly Made Errors" (What students usually get wrong here).
+    
+    If the input is an image, analyze it carefully.
+  `;
+
+  const schema: Schema = {
+    type: Type.OBJECT,
+    properties: {
+      problemStatement: { type: Type.STRING, description: "Restate the problem clearly" },
+      steps: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            stepTitle: { type: Type.STRING },
+            description: { type: Type.STRING },
+            equation: { type: Type.STRING, description: "Mathematical equation/formula if applicable" }
+          },
+          required: ["stepTitle", "description"]
+        }
+      },
+      finalAnswer: { type: Type.STRING },
+      keyTips: { type: Type.ARRAY, items: { type: Type.STRING } },
+      commonErrors: { type: Type.ARRAY, items: { type: Type.STRING } }
+    },
+    required: ["problemStatement", "steps", "finalAnswer", "keyTips", "commonErrors"]
+  };
+
+  const parts: any[] = [{ text: problemText || "Solve the problem in this image." }];
+  
+  if (imageBase64) {
+    parts.push({
+      inlineData: {
+        mimeType: 'image/png', // Assuming png or jpeg, API handles widely used formats
+        data: imageBase64
+      }
+    });
+  }
+
+  try {
+    const response = await ai.models.generateContent({
+      model: MODEL_TEXT,
+      contents: { parts },
+      config: {
+        systemInstruction: prompt,
+        responseMimeType: "application/json",
+        responseSchema: schema
+      }
+    });
+
+    const text = response.text;
+    if (!text) throw new Error("No response from AI");
+    return JSON.parse(text) as MathSolution;
+  } catch (error) {
+    console.error("Error solving math problem:", error);
     throw error;
   }
 };

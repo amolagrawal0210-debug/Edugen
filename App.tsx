@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import NotesGenerator from './components/NotesGenerator';
 import ExamGenerator from './components/ExamGenerator';
+import MathsSolver from './components/MathsSolver';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
-import { BookOpen, FileQuestion, BarChart2, GraduationCap, LayoutDashboard, Menu, X } from 'lucide-react';
+import { BookOpen, FileQuestion, BarChart2, GraduationCap, LayoutDashboard, Menu, X, Calculator } from 'lucide-react';
 import { Select } from './components/UIComponents';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'notes' | 'exam' | 'analytics'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'notes' | 'exam' | 'solver' | 'analytics'>('dashboard');
   const [globalClassLevel, setGlobalClassLevel] = useState<string>('12');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -16,6 +17,8 @@ const App: React.FC = () => {
         return <NotesGenerator classLevel={globalClassLevel} />;
       case 'exam':
         return <ExamGenerator classLevel={globalClassLevel} />;
+      case 'solver':
+        return <MathsSolver />;
       case 'analytics':
         return <AnalyticsDashboard />;
       default:
@@ -147,6 +150,12 @@ const SidebarContent: React.FC<SidebarProps> = ({ activeTab, onTabChange, classL
           label="Exam Generator" 
         />
         <NavButton 
+          active={activeTab === 'solver'} 
+          onClick={() => onTabChange('solver')} 
+          icon={<Calculator size={20} />} 
+          label="Maths Solver" 
+        />
+        <NavButton 
           active={activeTab === 'analytics'} 
           onClick={() => onTabChange('analytics')} 
           icon={<BarChart2 size={20} />} 
@@ -194,23 +203,29 @@ const DashboardHome: React.FC<{ onChangeTab: (tab: any) => void }> = ({ onChange
       </button>
     </div>
 
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <FeatureCard 
         icon={<BookOpen className="text-edu-primary" size={32} />}
         title="AI Power Notes"
-        desc="3-page high-density summaries with bullet points and keyword highlighting."
+        desc="3-page high-density summaries with bullet points."
         onClick={() => onChangeTab('notes')}
       />
       <FeatureCard 
         icon={<FileQuestion className="text-blue-400" size={32} />}
         title="Exam Simulator"
-        desc="Generate blueprint-aligned papers with competency-based questions."
+        desc="Generate blueprint-aligned papers."
         onClick={() => onChangeTab('exam')}
       />
       <FeatureCard 
+        icon={<Calculator className="text-purple-400" size={32} />}
+        title="Maths Solver"
+        desc="Step-by-step solutions for any math problem."
+        onClick={() => onChangeTab('solver')}
+      />
+      <FeatureCard 
         icon={<BarChart2 className="text-red-400" size={32} />}
-        title="Knowledge Heatmap"
-        desc="Visualize your green (strong) and dark (weak) zones instantly."
+        title="Heatmap"
+        desc="Visualize your strong and weak zones."
         onClick={() => onChangeTab('analytics')}
       />
     </div>
@@ -223,7 +238,7 @@ const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; desc: string
       {icon}
     </div>
     <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
-    <p className="text-gray-400 leading-relaxed">{desc}</p>
+    <p className="text-gray-400 leading-relaxed text-sm">{desc}</p>
   </div>
 );
 
