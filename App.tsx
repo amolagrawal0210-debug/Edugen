@@ -13,11 +13,11 @@ const App: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(true);
 
   useEffect(() => {
-    const body = document.body;
+    // Initialize theme based on state
     if (isDarkMode) {
-      body.classList.remove('light-mode');
+      document.body.classList.remove('light-mode');
     } else {
-      body.classList.add('light-mode');
+      document.body.classList.add('light-mode');
     }
   }, [isDarkMode]);
 
@@ -46,24 +46,24 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-gray-100 font-sans selection:bg-edu-primary selection:text-white flex flex-col md:flex-row transition-colors duration-300">
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-edu-primary selection:text-white flex flex-col md:flex-row transition-colors duration-200">
       
       {/* Desktop Sidebar (Hidden on Mobile) */}
-      <aside className="hidden md:flex w-64 bg-edu-dark border-r border-edu-border flex-col sticky top-0 h-screen z-20 transition-colors duration-300">
+      <aside className="hidden md:flex w-64 bg-edu-dark border-r border-edu-border flex-col sticky top-0 h-screen z-20">
         <SidebarContent 
           activeTab={activeTab} 
           onTabChange={handleTabChange} 
           classLevel={globalClassLevel} 
           onClassChange={setGlobalClassLevel}
           isDarkMode={isDarkMode}
-          toggleTheme={toggleTheme}
+          onToggleTheme={toggleTheme}
         />
       </aside>
 
       {/* Mobile Header & Overlay Menu */}
       <div className="md:hidden">
         {/* Top Header */}
-        <header className="fixed top-0 left-0 right-0 z-30 bg-edu-dark border-b border-edu-border p-4 flex justify-between items-center transition-colors duration-300">
+        <header className="fixed top-0 left-0 right-0 z-30 bg-edu-dark border-b border-edu-border p-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <div className="bg-edu-primary p-1.5 rounded-lg">
               <GraduationCap className="text-white" size={20} />
@@ -72,11 +72,8 @@ const App: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-2">
-            <button 
-              onClick={toggleTheme} 
-              className="p-2 text-gray-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors"
-            >
-              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            <button onClick={toggleTheme} className="p-2 text-white hover:bg-neutral-800 rounded-lg">
+               {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
             <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-white hover:bg-neutral-800 rounded-lg">
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -86,14 +83,14 @@ const App: React.FC = () => {
 
         {/* Mobile Dropdown Menu (Top Right Expansion) */}
         {isMobileMenuOpen && (
-          <div className="fixed top-16 right-0 left-0 z-20 bg-black/95 backdrop-blur-sm border-b border-edu-border p-4 animate-in slide-in-from-top-2">
+          <div className="fixed top-16 right-0 left-0 z-20 bg-edu-dark/95 backdrop-blur-sm border-b border-edu-border p-4 animate-in slide-in-from-top-2">
             <SidebarContent 
               activeTab={activeTab} 
               onTabChange={handleTabChange} 
               classLevel={globalClassLevel} 
               onClassChange={setGlobalClassLevel}
               isDarkMode={isDarkMode}
-              toggleTheme={toggleTheme}
+              onToggleTheme={toggleTheme}
             />
           </div>
         )}
@@ -103,15 +100,24 @@ const App: React.FC = () => {
       </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto h-screen relative scroll-smooth bg-black transition-colors duration-300">
-         <header className="hidden md:flex sticky top-0 z-10 bg-black/80 backdrop-blur-md border-b border-edu-border p-4 md:px-8 justify-between items-center">
+      <main className="flex-1 overflow-y-auto h-screen relative scroll-smooth">
+         <header className="hidden md:flex sticky top-0 z-10 bg-black/80 backdrop-blur-md border-b border-edu-border p-4 md:px-8 justify-between items-center transition-colors duration-200">
             <div className="flex items-center gap-3">
               <h2 className="text-lg font-semibold capitalize text-white">{activeTab.replace('-', ' ')}</h2>
               <span className="px-2 py-0.5 rounded text-xs bg-edu-primary/20 text-edu-primary border border-edu-primary/30">Class {globalClassLevel}</span>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
-              <span className="text-xs text-green-500 font-mono">SYSTEM ONLINE</span>
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={toggleTheme} 
+                className="p-2 rounded-full hover:bg-neutral-800 text-gray-400 hover:text-white transition-colors"
+                title="Toggle Theme"
+              >
+                {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+                <span className="text-xs text-green-500 font-mono">SYSTEM ONLINE</span>
+              </div>
             </div>
          </header>
          <div className="p-4 md:p-8">
@@ -128,13 +134,13 @@ interface SidebarProps {
   classLevel: string;
   onClassChange: (level: string) => void;
   isDarkMode: boolean;
-  toggleTheme: () => void;
+  onToggleTheme: () => void;
 }
 
-const SidebarContent: React.FC<SidebarProps> = ({ activeTab, onTabChange, classLevel, onClassChange, isDarkMode, toggleTheme }) => (
+const SidebarContent: React.FC<SidebarProps> = ({ activeTab, onTabChange, classLevel, onClassChange, isDarkMode, onToggleTheme }) => (
   <>
-    <div className="p-6 border-b border-edu-border hidden md:flex justify-between items-center">
-      <div className="flex items-center gap-2">
+    <div className="p-6 border-b border-edu-border hidden md:block">
+      <div className="flex items-center gap-2 mb-4">
         <div className="bg-edu-primary p-1.5 rounded-lg">
           <GraduationCap className="text-white" size={24} />
         </div>
@@ -142,7 +148,7 @@ const SidebarContent: React.FC<SidebarProps> = ({ activeTab, onTabChange, classL
       </div>
     </div>
     
-    <div className="p-4 md:p-6 border-b border-edu-border md:border-none flex-1">
+    <div className="p-4 md:p-6 border-b border-edu-border md:border-none">
       {/* Global Class Selector */}
       <div className="bg-neutral-900/50 p-3 rounded-lg border border-neutral-800 mb-6">
         <label className="text-[10px] text-edu-primary font-bold uppercase tracking-wider mb-2 block">Student Class</label>
@@ -192,20 +198,8 @@ const SidebarContent: React.FC<SidebarProps> = ({ activeTab, onTabChange, classL
       </nav>
     </div>
 
-    <div className="p-4 md:border-t border-edu-border mt-auto">
-      {/* Theme Toggle for Desktop Sidebar */}
-      <div className="hidden md:flex items-center justify-between bg-neutral-900 rounded-lg p-2 mb-4 border border-neutral-800">
-        <span className="text-xs text-gray-400 pl-2 font-medium">Theme</span>
-        <button 
-          onClick={toggleTheme}
-          className="p-1.5 rounded-md bg-black text-gray-300 hover:text-white border border-neutral-700 transition-all flex items-center gap-2"
-        >
-          {isDarkMode ? <Sun size={14} /> : <Moon size={14} />}
-          <span className="text-xs pr-1">{isDarkMode ? 'Light' : 'Dark'}</span>
-        </button>
-      </div>
-
-      <div className="bg-neutral-900 rounded-lg p-3 text-xs text-gray-400 hidden md:block border border-neutral-800">
+    <div className="p-4 md:border-t border-edu-border mt-auto hidden md:block">
+      <div className="bg-neutral-900 rounded-lg p-3 text-xs text-gray-400">
         <p className="mb-1 text-white font-semibold">Pro Tip:</p>
         Current Class: <span className="text-edu-primary font-bold">Class {classLevel}</span>. Change it here anytime.
       </div>
@@ -219,7 +213,7 @@ const NavButton: React.FC<{ active: boolean; onClick: () => void; icon: React.Re
     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
       active 
         ? 'bg-edu-primary/10 text-edu-primary border border-edu-primary/20' 
-        : 'text-gray-400 hover:bg-black/50 hover:text-white'
+        : 'text-gray-400 hover:bg-neutral-800 hover:text-white'
     }`}
   >
     <span className={`${active ? 'text-edu-primary' : 'text-gray-500 group-hover:text-white transition-colors'}`}>
@@ -238,7 +232,7 @@ const DashboardHome: React.FC<{ onChangeTab: (tab: any) => void }> = ({ onChange
       <p className="text-xl text-gray-400 max-w-2xl mx-auto">
         Your AI-powered companion for smart notes, adaptive testing, and performance analytics.
       </p>
-      <button onClick={() => onChangeTab('notes')} className="mt-8 bg-white text-black px-8 py-3 rounded-full font-bold hover:bg-gray-200 transition-colors transform hover:scale-105 border border-transparent hover:border-edu-primary">
+      <button onClick={() => onChangeTab('notes')} className="mt-8 bg-white dark:bg-white bg-black text-white dark:text-black px-8 py-3 rounded-full font-bold hover:opacity-90 transition-all transform hover:scale-105 shadow-lg">
         Start Studying Now
       </button>
     </div>
@@ -273,7 +267,7 @@ const DashboardHome: React.FC<{ onChangeTab: (tab: any) => void }> = ({ onChange
 );
 
 const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; desc: string; onClick: () => void }> = ({ icon, title, desc, onClick }) => (
-  <div onClick={onClick} className="bg-neutral-900 border border-neutral-800 p-6 rounded-xl cursor-pointer hover:border-edu-primary hover:bg-neutral-900/80 transition-all group">
+  <div onClick={onClick} className="bg-neutral-900 border border-neutral-800 p-6 rounded-xl cursor-pointer hover:border-edu-primary hover:bg-neutral-800 transition-all group">
     <div className="mb-4 bg-black w-14 h-14 rounded-lg flex items-center justify-center border border-neutral-800 group-hover:border-edu-primary/50 transition-colors">
       {icon}
     </div>

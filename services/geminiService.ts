@@ -310,17 +310,18 @@ export const solveMathProblem = async (
 ): Promise<MathSolution> => {
   validateKey();
 
+  // Optimized Prompt for Step-by-Step Clarity (Textbook Style)
   const prompt = `
-    You are an expert Math Tutor for CBSE students.
-    Solve this problem step-by-step.
+    Role: Expert Math Tutor.
+    Task: Solve the PRIMARY problem in the image/text showing detailed work.
+    Format: JSON.
     
-    Structure the response to be educational, not just the answer.
-    Include:
-    1. Clear Step-by-Step explanation.
-    2. "Key Tips to Remember" (Pro tips for exams).
-    3. "Commonly Made Errors" (What students usually get wrong here).
-    
-    If the input is an image, analyze it carefully.
+    **GUIDELINES FOR OUTPUT**:
+    1. **Detailed Derivation**: Break the solution into small, logical steps. Avoid combining multiple logical jumps.
+    2. **Equation Centric**: Every step involving a calculation MUST have the 'equation' field populated.
+    3. **Math Formatting**: Use clear plain text math notation (e.g., "x^2 + 2x + 1 = 0", "Area = π * r^2"). 
+    4. **Explanation**: The 'description' should briefly explain the logic (e.g., "Substitute r = 5 into the area formula").
+    5. **Goal**: The output should look like a clean, well-written exam solution.
   `;
 
   const schema: Schema = {
@@ -334,7 +335,7 @@ export const solveMathProblem = async (
           properties: {
             stepTitle: { type: Type.STRING },
             description: { type: Type.STRING },
-            equation: { type: Type.STRING, description: "Mathematical equation/formula if applicable" }
+            equation: { type: Type.STRING, description: "The mathematical expression or formula for this step" }
           },
           required: ["stepTitle", "description"]
         }
@@ -351,7 +352,7 @@ export const solveMathProblem = async (
   if (imageBase64) {
     parts.push({
       inlineData: {
-        mimeType: 'image/png', // Assuming png or jpeg, API handles widely used formats
+        mimeType: 'image/png', 
         data: imageBase64
       }
     });
@@ -364,7 +365,8 @@ export const solveMathProblem = async (
       config: {
         systemInstruction: prompt,
         responseMimeType: "application/json",
-        responseSchema: schema
+        responseSchema: schema,
+        thinkingConfig: { thinkingBudget: 0 } // Keep 0 for latency, but prompt ensures quality
       }
     });
 

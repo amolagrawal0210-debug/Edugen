@@ -1,101 +1,47 @@
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
+    "recharts": "https://aistudiocdn.com/recharts@^3.5.0",
+    "jspdf": "https://aistudiocdn.com/jspdf@^3.0.4",
+    "html2canvas": "https://aistudiocdn.com/html2canvas@^1.4.1"
+  }
+}
+</script>
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>EduGen - CBSE AI Expert</title>
-    
-    <!-- PDF Generation Libraries -->
-    <script type="importmap">
-{
-  "imports": {
-    "jspdf": "https://esm.sh/jspdf@2.5.1",
-    "html2canvas": "https://esm.sh/html2canvas@1.4.1",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
-    "recharts": "https://aistudiocdn.com/recharts@^3.5.0"
-  }
-}
-</script>
-
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <style>
-      :root {
-        /* DARK MODE (Default) */
-        --bg-main: 0 0 0;           /* Black */
-        --bg-sidebar: 10 10 10;     /* Very Dark Gray */
-        --bg-card: 23 23 23;        /* Neutral 900 */
-        --bg-element: 23 23 23;     /* Neutral 900 for inputs/inner cards */
-        
-        --text-main: 255 255 255;   /* White */
-        --text-muted: 156 163 175;  /* Gray 400 */
-        
-        --border-color: 64 64 64;   /* Neutral 700/Border */
-        
-        --primary: 22 163 74;       /* Green 600 */
-        --primary-fg: 255 255 255;  /* White text on primary */
-      }
-
-      .light-mode {
-        /* LIGHT MODE */
-        --bg-main: 255 255 255;     /* White */
-        --bg-sidebar: 248 250 252;  /* Slate 50 */
-        --bg-card: 255 255 255;     /* White */
-        --bg-element: 241 245 249;  /* Slate 100 */
-        
-        --text-main: 15 23 42;      /* Slate 900 */
-        --text-muted: 71 85 105;    /* Slate 600 */
-        
-        --border-color: 226 232 240; /* Slate 200 */
-        
-        --primary: 22 163 74;       /* Green 600 (Keep brand color) */
-        --primary-fg: 255 255 255;
-      }
-
-      body {
-        background-color: rgb(var(--bg-main));
-        color: rgb(var(--text-main));
-        transition: background-color 0.3s ease, color 0.3s ease;
-      }
-      
-      /* Smooth transitions for theme switching */
-      *, *::before, *::after {
-        transition-property: background-color, border-color, color, fill, stroke;
-        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-        transition-duration: 200ms;
-      }
-    </style>
-
     <script>
       tailwind.config = {
         darkMode: 'class',
         theme: {
           extend: {
             colors: {
-              // Map Tailwind classes to CSS variables
-              black: 'rgb(var(--bg-main) / <alpha-value>)',
-              white: 'rgb(var(--text-main) / <alpha-value>)',
+              // Dynamic Base Colors mapped to CSS Variables
+              black: 'rgb(var(--color-bg) / <alpha-value>)',
+              white: 'rgb(var(--color-text) / <alpha-value>)',
               
-              'edu-dark': 'rgb(var(--bg-sidebar) / <alpha-value>)',
-              'edu-card': 'rgb(var(--bg-card) / <alpha-value>)',
-              'edu-border': 'rgb(var(--border-color) / <alpha-value>)',
-              
-              'edu-primary': 'rgb(var(--primary) / <alpha-value>)',
-              'edu-accent': '#15803d', // Green 700
-              
-              neutral: {
-                900: 'rgb(var(--bg-element) / <alpha-value>)', // Used for inner cards/inputs
-                800: 'rgb(var(--border-color) / <alpha-value>)', // Used for borders/separators
+              // EduGen Specific Brand Colors
+              edu: {
+                primary: '#16a34a', // Green-600
+                dark: 'rgb(var(--color-sidebar) / <alpha-value>)',
+                card: 'rgb(var(--color-card) / <alpha-value>)',
+                border: 'rgb(var(--color-border) / <alpha-value>)',
+                accent: '#15803d', // Green-700
               },
-              gray: {
-                300: 'rgb(var(--text-muted) / <alpha-value>)', // Muted text mostly
-                400: 'rgb(var(--text-muted) / <alpha-value>)',
-                200: 'rgb(var(--text-main) / <alpha-value>)', // Sometimes used for lighter text
-                100: 'rgb(var(--bg-main) / <alpha-value>)'
+              
+              // Dynamic Neutrals for standard Tailwind classes
+              neutral: {
+                800: 'rgb(var(--color-neutral-800) / <alpha-value>)',
+                900: 'rgb(var(--color-neutral-900) / <alpha-value>)',
               }
             },
             fontFamily: {
@@ -112,11 +58,52 @@
             }
           },
         },
-      };
+      }
     </script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+
+      :root {
+        /* Default Dark Theme */
+        --color-bg: 0 0 0;           /* Black */
+        --color-text: 255 255 255;   /* White */
+        
+        --color-sidebar: 5 5 5;      /* Very Dark Gray */
+        --color-card: 23 23 23;      /* Neutral 900 */
+        --color-border: 64 64 64;    /* Neutral 700 */
+        
+        --color-neutral-800: 38 38 38;
+        --color-neutral-900: 23 23 23;
+      }
+
+      body.light-mode {
+        /* Light Theme Overrides */
+        --color-bg: 249 250 251;     /* Gray 50 */
+        --color-text: 17 24 39;      /* Gray 900 */
+        
+        --color-sidebar: 255 255 255; /* White */
+        --color-card: 255 255 255;    /* White */
+        --color-border: 229 231 235;  /* Gray 200 */
+        
+        --color-neutral-800: 243 244 246; /* Gray 100 */
+        --color-neutral-900: 255 255 255; /* White */
+      }
+
+      /* Transitions for smooth theme switching */
+      body, div, nav, aside, input, select, button, textarea {
+        transition-property: background-color, border-color, color, fill, stroke;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 200ms;
+      }
+      
+      /* PDF Capture Mode Overrides */
+      .pdf-capture-mode {
+        background-color: white !important;
+        color: black !important;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
   </body>
 </html>
