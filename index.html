@@ -4,63 +4,117 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>EduGen - CBSE AI Expert</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              edu: {
-                black: '#000000',
-                dark: '#0a0a0a',
-                card: '#121212',
-                border: '#14532d', // green-900
-                primary: '#16a34a', // green-600
-                accent: '#22c55e', // green-500
-                light: '#ffffff',
-                muted: '#a3a3a3',
-              }
-            }
-          }
-        }
-      }
-    </script>
-    <style>
-      body {
-        background-color: #000000;
-        color: #ffffff;
-      }
-      /* Custom scrollbar for dark theme */
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #0a0a0a; 
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #14532d; 
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #16a34a; 
-      }
-    </style>
-  <script type="importmap">
+    
+    <!-- PDF Generation Libraries -->
+    <script type="importmap">
 {
   "imports": {
+    "jspdf": "https://esm.sh/jspdf@2.5.1",
+    "html2canvas": "https://esm.sh/html2canvas@1.4.1",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "recharts": "https://aistudiocdn.com/recharts@^3.5.0",
-    "jspdf": "https://aistudiocdn.com/jspdf@^2.5.2",
-    "html2canvas": "https://aistudiocdn.com/html2canvas@^1.4.1"
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
+    "recharts": "https://aistudiocdn.com/recharts@^3.5.0"
   }
 }
 </script>
-</head>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+      :root {
+        /* DARK MODE (Default) */
+        --bg-main: 0 0 0;           /* Black */
+        --bg-sidebar: 10 10 10;     /* Very Dark Gray */
+        --bg-card: 23 23 23;        /* Neutral 900 */
+        --bg-element: 23 23 23;     /* Neutral 900 for inputs/inner cards */
+        
+        --text-main: 255 255 255;   /* White */
+        --text-muted: 156 163 175;  /* Gray 400 */
+        
+        --border-color: 64 64 64;   /* Neutral 700/Border */
+        
+        --primary: 22 163 74;       /* Green 600 */
+        --primary-fg: 255 255 255;  /* White text on primary */
+      }
+
+      .light-mode {
+        /* LIGHT MODE */
+        --bg-main: 255 255 255;     /* White */
+        --bg-sidebar: 248 250 252;  /* Slate 50 */
+        --bg-card: 255 255 255;     /* White */
+        --bg-element: 241 245 249;  /* Slate 100 */
+        
+        --text-main: 15 23 42;      /* Slate 900 */
+        --text-muted: 71 85 105;    /* Slate 600 */
+        
+        --border-color: 226 232 240; /* Slate 200 */
+        
+        --primary: 22 163 74;       /* Green 600 (Keep brand color) */
+        --primary-fg: 255 255 255;
+      }
+
+      body {
+        background-color: rgb(var(--bg-main));
+        color: rgb(var(--text-main));
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+      
+      /* Smooth transitions for theme switching */
+      *, *::before, *::after {
+        transition-property: background-color, border-color, color, fill, stroke;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 200ms;
+      }
+    </style>
+
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              // Map Tailwind classes to CSS variables
+              black: 'rgb(var(--bg-main) / <alpha-value>)',
+              white: 'rgb(var(--text-main) / <alpha-value>)',
+              
+              'edu-dark': 'rgb(var(--bg-sidebar) / <alpha-value>)',
+              'edu-card': 'rgb(var(--bg-card) / <alpha-value>)',
+              'edu-border': 'rgb(var(--border-color) / <alpha-value>)',
+              
+              'edu-primary': 'rgb(var(--primary) / <alpha-value>)',
+              'edu-accent': '#15803d', // Green 700
+              
+              neutral: {
+                900: 'rgb(var(--bg-element) / <alpha-value>)', // Used for inner cards/inputs
+                800: 'rgb(var(--border-color) / <alpha-value>)', // Used for borders/separators
+              },
+              gray: {
+                300: 'rgb(var(--text-muted) / <alpha-value>)', // Muted text mostly
+                400: 'rgb(var(--text-muted) / <alpha-value>)',
+                200: 'rgb(var(--text-main) / <alpha-value>)', // Sometimes used for lighter text
+                100: 'rgb(var(--bg-main) / <alpha-value>)'
+              }
+            },
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.5s ease-out',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0', transform: 'translateY(10px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              }
+            }
+          },
+        },
+      };
+    </script>
+  </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>

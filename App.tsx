@@ -1,15 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import NotesGenerator from './components/NotesGenerator';
 import ExamGenerator from './components/ExamGenerator';
 import MathsSolver from './components/MathsSolver';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
-import { BookOpen, FileQuestion, BarChart2, GraduationCap, LayoutDashboard, Menu, X, Calculator } from 'lucide-react';
+import { BookOpen, FileQuestion, BarChart2, GraduationCap, LayoutDashboard, Menu, X, Calculator, Sun, Moon } from 'lucide-react';
 import { Select } from './components/UIComponents';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'notes' | 'exam' | 'solver' | 'analytics'>('dashboard');
   const [globalClassLevel, setGlobalClassLevel] = useState<string>('12');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
+
+  useEffect(() => {
+    const body = document.body;
+    if (isDarkMode) {
+      body.classList.remove('light-mode');
+    } else {
+      body.classList.add('light-mode');
+    }
+  }, [isDarkMode]);
+
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -32,22 +46,24 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-gray-100 font-sans selection:bg-edu-primary selection:text-white flex flex-col md:flex-row">
+    <div className="min-h-screen bg-black text-gray-100 font-sans selection:bg-edu-primary selection:text-white flex flex-col md:flex-row transition-colors duration-300">
       
       {/* Desktop Sidebar (Hidden on Mobile) */}
-      <aside className="hidden md:flex w-64 bg-edu-dark border-r border-edu-border flex-col sticky top-0 h-screen z-20">
+      <aside className="hidden md:flex w-64 bg-edu-dark border-r border-edu-border flex-col sticky top-0 h-screen z-20 transition-colors duration-300">
         <SidebarContent 
           activeTab={activeTab} 
           onTabChange={handleTabChange} 
           classLevel={globalClassLevel} 
           onClassChange={setGlobalClassLevel}
+          isDarkMode={isDarkMode}
+          toggleTheme={toggleTheme}
         />
       </aside>
 
       {/* Mobile Header & Overlay Menu */}
       <div className="md:hidden">
         {/* Top Header */}
-        <header className="fixed top-0 left-0 right-0 z-30 bg-edu-dark border-b border-edu-border p-4 flex justify-between items-center">
+        <header className="fixed top-0 left-0 right-0 z-30 bg-edu-dark border-b border-edu-border p-4 flex justify-between items-center transition-colors duration-300">
           <div className="flex items-center gap-2">
             <div className="bg-edu-primary p-1.5 rounded-lg">
               <GraduationCap className="text-white" size={20} />
@@ -55,9 +71,17 @@ const App: React.FC = () => {
             <h1 className="text-xl font-bold tracking-tight text-white">EduGen<span className="text-edu-primary">.ai</span></h1>
           </div>
           
-          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-white hover:bg-neutral-800 rounded-lg">
-            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={toggleTheme} 
+              className="p-2 text-gray-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors"
+            >
+              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-white hover:bg-neutral-800 rounded-lg">
+              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </header>
 
         {/* Mobile Dropdown Menu (Top Right Expansion) */}
@@ -68,6 +92,8 @@ const App: React.FC = () => {
               onTabChange={handleTabChange} 
               classLevel={globalClassLevel} 
               onClassChange={setGlobalClassLevel}
+              isDarkMode={isDarkMode}
+              toggleTheme={toggleTheme}
             />
           </div>
         )}
@@ -77,7 +103,7 @@ const App: React.FC = () => {
       </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto h-screen relative scroll-smooth">
+      <main className="flex-1 overflow-y-auto h-screen relative scroll-smooth bg-black transition-colors duration-300">
          <header className="hidden md:flex sticky top-0 z-10 bg-black/80 backdrop-blur-md border-b border-edu-border p-4 md:px-8 justify-between items-center">
             <div className="flex items-center gap-3">
               <h2 className="text-lg font-semibold capitalize text-white">{activeTab.replace('-', ' ')}</h2>
@@ -101,12 +127,14 @@ interface SidebarProps {
   onTabChange: (tab: any) => void;
   classLevel: string;
   onClassChange: (level: string) => void;
+  isDarkMode: boolean;
+  toggleTheme: () => void;
 }
 
-const SidebarContent: React.FC<SidebarProps> = ({ activeTab, onTabChange, classLevel, onClassChange }) => (
+const SidebarContent: React.FC<SidebarProps> = ({ activeTab, onTabChange, classLevel, onClassChange, isDarkMode, toggleTheme }) => (
   <>
-    <div className="p-6 border-b border-edu-border hidden md:block">
-      <div className="flex items-center gap-2 mb-4">
+    <div className="p-6 border-b border-edu-border hidden md:flex justify-between items-center">
+      <div className="flex items-center gap-2">
         <div className="bg-edu-primary p-1.5 rounded-lg">
           <GraduationCap className="text-white" size={24} />
         </div>
@@ -114,7 +142,7 @@ const SidebarContent: React.FC<SidebarProps> = ({ activeTab, onTabChange, classL
       </div>
     </div>
     
-    <div className="p-4 md:p-6 border-b border-edu-border md:border-none">
+    <div className="p-4 md:p-6 border-b border-edu-border md:border-none flex-1">
       {/* Global Class Selector */}
       <div className="bg-neutral-900/50 p-3 rounded-lg border border-neutral-800 mb-6">
         <label className="text-[10px] text-edu-primary font-bold uppercase tracking-wider mb-2 block">Student Class</label>
@@ -164,8 +192,20 @@ const SidebarContent: React.FC<SidebarProps> = ({ activeTab, onTabChange, classL
       </nav>
     </div>
 
-    <div className="p-4 md:border-t border-edu-border mt-auto hidden md:block">
-      <div className="bg-neutral-900 rounded-lg p-3 text-xs text-gray-400">
+    <div className="p-4 md:border-t border-edu-border mt-auto">
+      {/* Theme Toggle for Desktop Sidebar */}
+      <div className="hidden md:flex items-center justify-between bg-neutral-900 rounded-lg p-2 mb-4 border border-neutral-800">
+        <span className="text-xs text-gray-400 pl-2 font-medium">Theme</span>
+        <button 
+          onClick={toggleTheme}
+          className="p-1.5 rounded-md bg-black text-gray-300 hover:text-white border border-neutral-700 transition-all flex items-center gap-2"
+        >
+          {isDarkMode ? <Sun size={14} /> : <Moon size={14} />}
+          <span className="text-xs pr-1">{isDarkMode ? 'Light' : 'Dark'}</span>
+        </button>
+      </div>
+
+      <div className="bg-neutral-900 rounded-lg p-3 text-xs text-gray-400 hidden md:block border border-neutral-800">
         <p className="mb-1 text-white font-semibold">Pro Tip:</p>
         Current Class: <span className="text-edu-primary font-bold">Class {classLevel}</span>. Change it here anytime.
       </div>
@@ -179,7 +219,7 @@ const NavButton: React.FC<{ active: boolean; onClick: () => void; icon: React.Re
     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
       active 
         ? 'bg-edu-primary/10 text-edu-primary border border-edu-primary/20' 
-        : 'text-gray-400 hover:bg-white/5 hover:text-white'
+        : 'text-gray-400 hover:bg-black/50 hover:text-white'
     }`}
   >
     <span className={`${active ? 'text-edu-primary' : 'text-gray-500 group-hover:text-white transition-colors'}`}>
@@ -198,7 +238,7 @@ const DashboardHome: React.FC<{ onChangeTab: (tab: any) => void }> = ({ onChange
       <p className="text-xl text-gray-400 max-w-2xl mx-auto">
         Your AI-powered companion for smart notes, adaptive testing, and performance analytics.
       </p>
-      <button onClick={() => onChangeTab('notes')} className="mt-8 bg-white text-black px-8 py-3 rounded-full font-bold hover:bg-gray-200 transition-colors transform hover:scale-105">
+      <button onClick={() => onChangeTab('notes')} className="mt-8 bg-white text-black px-8 py-3 rounded-full font-bold hover:bg-gray-200 transition-colors transform hover:scale-105 border border-transparent hover:border-edu-primary">
         Start Studying Now
       </button>
     </div>
