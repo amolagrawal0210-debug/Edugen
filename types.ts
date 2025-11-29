@@ -1,3 +1,4 @@
+
 export interface NoteSection {
   title: string;
   content: string[]; // Bullet points
@@ -19,6 +20,19 @@ export interface StudyNote {
   mcqs: { question: string; options: string[]; answer: string }[];
   summaryTable: { concept: string; description: string }[];
   videoSearchTerm: string;
+}
+
+export interface MindMapNode {
+  title: string;
+  color?: string;
+  children: { title: string }[]; // Level 2 nodes (Keywords)
+}
+
+export interface MindMapData {
+  topic: string;
+  subject: string;
+  root: string; // Central Topic
+  branches: MindMapNode[]; // Level 1 Nodes
 }
 
 export enum QuestionType {
@@ -96,12 +110,33 @@ export interface UserProfile {
   classLevel: string; // "9", "10", "11", "12"
 }
 
+// Mimic Firebase User for local typing to avoid dependency on firebase/auth imports
+export interface User {
+  uid: string;
+  displayName: string | null;
+  email: string | null;
+  photoURL: string | null;
+  emailVerified?: boolean;
+  isAnonymous?: boolean;
+  providerData?: any[];
+  metadata?: any;
+  refreshToken?: string;
+  tenantId?: string | null;
+  delete?: () => Promise<void>;
+  getIdToken?: () => Promise<string>;
+  getIdTokenResult?: () => Promise<any>;
+  reload?: () => Promise<void>;
+  toJSON?: () => object;
+  phoneNumber?: string | null;
+  providerId?: string;
+}
+
 export interface SavedItem {
   id: string; // Firestore ID
   userId: string;
-  type: 'note' | 'exam';
+  type: 'note' | 'exam' | 'mindmap';
   title: string;
   subject: string;
   createdAt: number;
-  data: StudyNote | ExamPaper;
+  data: StudyNote | ExamPaper | MindMapData;
 }

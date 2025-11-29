@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import NotesGenerator from './components/NotesGenerator';
 import ExamGenerator from './components/ExamGenerator';
@@ -14,8 +15,7 @@ import {
   isFirebaseConfigured,
   updateUserProfile
 } from './services/firebaseService';
-import { UserProfile } from './types';
-import { User } from 'firebase/auth';
+import { UserProfile, User } from './types';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'notes' | 'exam' | 'solver' | 'analytics'>('dashboard');

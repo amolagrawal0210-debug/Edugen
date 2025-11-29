@@ -1,5 +1,6 @@
+
 import { GoogleGenAI, Type, Schema } from "@google/genai";
-import { StudyNote, ExamPaper, AnalyticsData, QuestionType, Difficulty, ExamType, MathSolution } from "../types";
+import { StudyNote, ExamPaper, AnalyticsData, QuestionType, Difficulty, ExamType, MathSolution, MindMapData } from "../types";
 
 // Initialize Gemini Client safely for both Vite (Vercel) and other environments
 const getApiKey = (): string => {
@@ -173,6 +174,80 @@ export const generateStudyNotes = async (
     return JSON.parse(text) as StudyNote;
   } catch (error) {
     console.error("Error generating notes:", error);
+    throw error;
+  }
+};
+
+export const generateMindMap = async (
+  topic: string,
+  classLevel: string,
+  subject: string,
+  language: string = 'English'
+): Promise<MindMapData> => {
+  validateKey();
+  
+  const prompt = `
+    Create a highly structured, minimalist Mind Map for:
+    Topic: ${topic}
+    Subject: ${subject}
+    Class: ${classLevel}
+    Language: ${language}
+
+    **Constraints for Single Page Fit:**
+    1. **Root**: The main topic.
+    2. **Branches**: Exactly 4 to 6 main concepts (Level 1). No more, no less.
+    3. **Leaves**: 3 to 4 short keywords/sub-points per branch (Level 2).
+    4. **Brevity**: All titles must be VERY short (1-4 words max).
+    5. **Goal**: Best revision summary in one glance.
+    
+    Return JSON matching the schema.
+  `;
+
+  const schema: Schema = {
+    type: Type.OBJECT,
+    properties: {
+      topic: { type: Type.STRING },
+      subject: { type: Type.STRING },
+      root: { type: Type.STRING, description: "Central Bubble Title" },
+      branches: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            title: { type: Type.STRING, description: "Main Branch Title" },
+            children: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  title: { type: Type.STRING, description: "Keyword or Subpoint" }
+                },
+                required: ["title"]
+              }
+            }
+          },
+          required: ["title", "children"]
+        }
+      }
+    },
+    required: ["topic", "subject", "root", "branches"]
+  };
+
+  try {
+    const response = await ai.models.generateContent({
+      model: MODEL_TEXT,
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: schema
+      }
+    });
+
+    const text = response.text;
+    if (!text) throw new Error("No response from AI");
+    return JSON.parse(text) as MindMapData;
+  } catch (error) {
+    console.error("Error generating mind map:", error);
     throw error;
   }
 };

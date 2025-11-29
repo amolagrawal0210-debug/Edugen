@@ -1,12 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import { generateExamPaper } from '../services/geminiService';
-import { ExamPaper, QuestionType, Difficulty, ExamType, SavedItem } from '../types';
+import { ExamPaper, QuestionType, Difficulty, ExamType, SavedItem, User } from '../types';
 import { Button, Card, Input, Select, LoadingSpinner, Badge } from './UIComponents';
 import { FileQuestion, CheckCircle, Brain, AlertTriangle, Book, Calendar, Download, ImageIcon, Save, History, ChevronRight, Search } from 'lucide-react';
 import { jsPDF } from "jspdf";
 import html2canvas from 'html2canvas';
 import { saveGeneratedItem, getSavedItems } from '../services/firebaseService';
-import { User } from 'firebase/auth';
 
 interface ExamGeneratorProps {
   classLevel: string;

@@ -1,13 +1,16 @@
+
+// @ts-ignore
 import { initializeApp } from "firebase/app";
+// @ts-ignore
 import { 
   getAuth, 
   GoogleAuthProvider, 
   signInWithPopup, 
   signOut, 
   onAuthStateChanged,
-  updateProfile,
-  User 
+  updateProfile 
 } from "firebase/auth";
+// @ts-ignore
 import { 
   getFirestore, 
   doc, 
@@ -20,7 +23,7 @@ import {
   getDocs, 
   orderBy 
 } from "firebase/firestore";
-import { SavedItem, StudyNote, ExamPaper } from "../types";
+import { SavedItem, StudyNote, ExamPaper, MindMapData, User } from "../types";
 
 // --- CONFIGURATION ---
 // Replace with your ACTUAL Firebase Config if you want real cloud sync
@@ -62,7 +65,6 @@ const MOCK_USER: User = {
   photoURL: "https://api.dicebear.com/7.x/avataaars/svg?seed=EduGen",
   emailVerified: true,
   isAnonymous: false,
-  metadata: {} as any,
   providerData: [],
   refreshToken: "",
   tenantId: null,
@@ -215,10 +217,10 @@ export const getUserClassLevel = async (uid: string): Promise<string | null> => 
 
 export const saveGeneratedItem = async (
   userId: string, 
-  type: 'note' | 'exam', 
+  type: 'note' | 'exam' | 'mindmap', 
   title: string, 
   subject: string,
-  data: StudyNote | ExamPaper
+  data: StudyNote | ExamPaper | MindMapData
 ) => {
   if (isFirebaseConfigured() && db) {
     try {
@@ -257,7 +259,7 @@ export const saveGeneratedItem = async (
   }
 };
 
-export const getSavedItems = async (userId: string, type: 'note' | 'exam'): Promise<SavedItem[]> => {
+export const getSavedItems = async (userId: string, type: 'note' | 'exam' | 'mindmap'): Promise<SavedItem[]> => {
   if (isFirebaseConfigured() && db) {
     try {
       const q = query(
