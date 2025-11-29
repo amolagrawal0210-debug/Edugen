@@ -1,4 +1,5 @@
 import React from 'react';
+import { X } from 'lucide-react';
 
 export const Button: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'outline' }> = ({ 
   children, 
@@ -75,3 +76,23 @@ export const LoadingSpinner: React.FC = () => (
     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-edu-accent"></div>
   </div>
 );
+
+export const Modal: React.FC<{ isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode }> = ({ isOpen, onClose, title, children }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="bg-edu-card border border-edu-border rounded-xl w-full max-w-md shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+        <div className="flex justify-between items-center p-4 border-b border-edu-border">
+          <h3 className="text-lg font-bold text-white">{title}</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+            <X size={20} />
+          </button>
+        </div>
+        <div className="p-4 md:p-6">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};

@@ -86,3 +86,22 @@ export interface MathSolution {
   keyTips: string[];
   commonErrors: string[];
 }
+
+// User Persistence Types
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  photoURL: string;
+  classLevel: string; // "9", "10", "11", "12"
+}
+
+export interface SavedItem {
+  id: string; // Firestore ID
+  userId: string;
+  type: 'note' | 'exam';
+  title: string;
+  subject: string;
+  createdAt: number;
+  data: StudyNote | ExamPaper;
+}
