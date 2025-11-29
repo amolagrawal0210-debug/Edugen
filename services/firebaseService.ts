@@ -75,17 +75,35 @@ const MOCK_USER: User = {
   providerId: 'google.com'
 };
 
-// Event mechanism for Local Mode
-const localAuthListeners: ((user: User | null) => void)[] = [];
+// --- GLOBAL EVENT SYSTEM FOR LOCAL AUTH (HMR SAFE) ---
+// We store listeners on window to prevent them from being lost during Hot Module Replacement
+const GLOBAL_LISTENERS_KEY = '__edugen_auth_listeners__';
+if (!(window as any)[GLOBAL_LISTENERS_KEY]) {
+  (window as any)[GLOBAL_LISTENERS_KEY] = [];
+}
+const localAuthListeners: ((user: User | null) => void)[] = (window as any)[GLOBAL_LISTENERS_KEY];
 
 const notifyLocalListeners = (user: User | null) => {
-  localAuthListeners.forEach(listener => listener(user));
+  // Notify all active subscribers
+  localAuthListeners.forEach(listener => {
+    try {
+      listener(user);
+    } catch (e) {
+      console.error("Auth listener error:", e);
+    }
+  });
 }
 
 const getLocalUser = (): User => {
-  const storedData = localStorage.getItem("edugen_local_user_data");
-  const userData = storedData ? JSON.parse(storedData) : {};
-  return { ...MOCK_USER, ...userData };
+  try {
+    const storedData = localStorage.getItem("edugen_local_user_data");
+    const userData = storedData ? JSON.parse(storedData) : {};
+    // Deep merge isn't strictly necessary, but ensuring we keep MOCK_USER defaults + overrides
+    return { ...MOCK_USER, ...userData };
+  } catch (e) {
+    console.warn("Error reading local user data, resetting to default.", e);
+    return MOCK_USER;
+  }
 };
 
 // --- AUTHENTICATION ---
@@ -123,9 +141,11 @@ export const subscribeToAuthChanges = (callback: (user: User | null) => void) =>
     return onAuthStateChanged(auth, callback);
   } else {
     // Local Mode Auth Listener registration
-    localAuthListeners.push(callback);
+    if (!localAuthListeners.includes(callback)) {
+      localAuthListeners.push(callback);
+    }
     
-    // Initial check
+    // Initial check - execute immediately
     const isActive = localStorage.getItem("edugen_user_session") === "active";
     if (isActive) {
       callback(getLocalUser());
@@ -133,6 +153,7 @@ export const subscribeToAuthChanges = (callback: (user: User | null) => void) =>
       callback(null);
     }
 
+    // Return Unsubscribe Function
     return () => {
       const index = localAuthListeners.indexOf(callback);
       if (index > -1) localAuthListeners.splice(index, 1);
@@ -143,7 +164,8 @@ export const subscribeToAuthChanges = (callback: (user: User | null) => void) =>
 export const updateUserProfile = async (user: User, updates: { displayName?: string, photoURL?: string }) => {
   if (isFirebaseConfigured() && auth) {
     await updateProfile(user, updates);
-    // Force refresh might be needed in UI depending on Firebase's internal state triggering
+    // Force refresh state for Firebase is handled by onAuthStateChanged internally usually, 
+    // but sometimes needs a reload() or explicit fetch.
   } else {
     // Local Mode Update
     const currentStored = localStorage.getItem("edugen_local_user_data");
@@ -151,8 +173,9 @@ export const updateUserProfile = async (user: User, updates: { displayName?: str
     const newObj = { ...currentObj, ...updates };
     localStorage.setItem("edugen_local_user_data", JSON.stringify(newObj));
     
+    // Create new object reference to trigger React updates
     const updatedUser = { ...user, ...updates } as User;
-    notifyLocalListeners(updatedUser); // Update all components subscribed to auth
+    notifyLocalListeners(updatedUser); 
   }
 };
 
@@ -214,17 +237,23 @@ export const saveGeneratedItem = async (
   } else {
     // Local Mode Save
     const key = `edugen_saved_${userId}`;
-    const existing = JSON.parse(localStorage.getItem(key) || "[]");
-    const newItem: SavedItem = {
-      id: `local-${Date.now()}`,
-      userId,
-      type,
-      title,
-      subject,
-      data,
-      createdAt: Date.now()
-    };
-    localStorage.setItem(key, JSON.stringify([newItem, ...existing]));
+    try {
+      const existingStr = localStorage.getItem(key);
+      const existing = existingStr ? JSON.parse(existingStr) : [];
+      const newItem: SavedItem = {
+        id: `local-${Date.now()}`,
+        userId,
+        type,
+        title,
+        subject,
+        data,
+        createdAt: Date.now()
+      };
+      localStorage.setItem(key, JSON.stringify([newItem, ...existing]));
+    } catch (e) {
+      console.error("Failed to save local item", e);
+      alert("Storage limit reached or error saving locally.");
+    }
   }
 };
 
@@ -250,7 +279,11 @@ export const getSavedItems = async (userId: string, type: 'note' | 'exam'): Prom
   } else {
     // Local Mode Fetch
     const key = `edugen_saved_${userId}`;
-    const allItems = JSON.parse(localStorage.getItem(key) || "[]") as SavedItem[];
-    return allItems.filter(item => item.type === type);
+    try {
+      const allItems = JSON.parse(localStorage.getItem(key) || "[]") as SavedItem[];
+      return allItems.filter(item => item.type === type);
+    } catch (e) {
+      return [];
+    }
   }
 };

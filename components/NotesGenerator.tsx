@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { generateStudyNotes } from '../services/geminiService';
 import { StudyNote, SavedItem } from '../types';
 import { Button, Card, Input, Select, LoadingSpinner, Badge } from './UIComponents';
-import { BookOpen, Printer, Brain, HelpCircle, Lightbulb, Save, History, ChevronRight } from 'lucide-react';
+import { BookOpen, Printer, Brain, HelpCircle, Lightbulb, Save, History, ChevronRight, Search } from 'lucide-react';
 import { jsPDF } from "jspdf";
 import html2canvas from 'html2canvas';
 import { saveGeneratedItem, getSavedItems } from '../services/firebaseService';
@@ -27,6 +27,7 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel, user }) => 
   // Saved State
   const [savedNotes, setSavedNotes] = useState<SavedItem[]>([]);
   const [loadingSaved, setLoadingSaved] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (activeView === 'saved' && user) {
@@ -310,6 +311,29 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel, user }) => 
     doc.save(`${note.topic}_Notes.pdf`);
   };
 
+  // Search Logic
+  const filteredNotes = savedNotes.filter(item => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    const noteData = item.data as StudyNote;
+
+    // Search top-level fields
+    if (item.title.toLowerCase().includes(query)) return true;
+    if (item.subject.toLowerCase().includes(query)) return true;
+
+    // Search deep content
+    if (noteData.intro?.toLowerCase().includes(query)) return true;
+    
+    // Search sections
+    if (noteData.sections?.some(section => 
+      section.title.toLowerCase().includes(query) || 
+      section.content.some(c => c.toLowerCase().includes(query)) ||
+      section.keywords.some(k => k.toLowerCase().includes(query))
+    )) return true;
+
+    return false;
+  });
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* Top Tabs */}
@@ -521,21 +545,32 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel, user }) => 
       ) : (
         <div className="space-y-6 animate-fade-in">
            <h2 className="text-2xl font-bold mb-4">Saved Notes History</h2>
+           
+           <div className="relative mb-6">
+             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+             <Input 
+               placeholder="Search notes by title, topic, or content..." 
+               value={searchQuery}
+               onChange={(e) => setSearchQuery(e.target.value)}
+               className="pl-10"
+             />
+           </div>
+
            {loadingSaved ? <LoadingSpinner /> : (
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               {savedNotes.length > 0 ? savedNotes.map((item) => (
-                 <div key={item.id} className="bg-neutral-900 border border-neutral-800 p-4 rounded-xl flex justify-between items-center hover:border-edu-primary transition-colors">
-                    <div>
-                      <h3 className="font-bold text-white text-lg">{item.title}</h3>
-                      <p className="text-sm text-gray-500">{item.subject} • {new Date(item.createdAt).toLocaleDateString()}</p>
+               {filteredNotes.length > 0 ? filteredNotes.map((item) => (
+                 <div key={item.id} className="bg-neutral-900 border border-neutral-800 p-4 rounded-xl flex justify-between items-center hover:border-edu-primary transition-colors cursor-pointer" onClick={() => handleViewSaved(item)}>
+                    <div className="overflow-hidden">
+                      <h3 className="font-bold text-white text-lg truncate">{item.title}</h3>
+                      <p className="text-sm text-gray-500 truncate">{item.subject} • {new Date(item.createdAt).toLocaleDateString()}</p>
                     </div>
-                    <Button onClick={() => handleViewSaved(item)} variant="outline" className="h-10 w-10 !p-0 rounded-full flex items-center justify-center">
+                    <Button variant="outline" className="h-10 w-10 !p-0 rounded-full flex items-center justify-center shrink-0">
                       <ChevronRight size={20} />
                     </Button>
                  </div>
                )) : (
                  <div className="col-span-2 text-center py-20 text-gray-500">
-                   No saved notes found. Generate and save some!
+                   {searchQuery ? "No matching notes found." : "No saved notes found. Generate and save some!"}
                  </div>
                )}
              </div>
