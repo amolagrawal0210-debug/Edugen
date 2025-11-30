@@ -1,5 +1,6 @@
-import React from 'react';
-import { X } from 'lucide-react';
+
+import React, { useState } from 'react';
+import { X, ChevronDown, ChevronUp } from 'lucide-react';
 
 export const Button: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'outline' }> = ({ 
   children, 
@@ -7,10 +8,10 @@ export const Button: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { 
   variant = 'primary', 
   ...props 
 }) => {
-  const baseStyle = "px-6 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed";
+  const baseStyle = "px-6 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95";
   
   const variants = {
-    primary: "bg-edu-primary hover:bg-edu-accent text-white shadow-[0_0_15px_rgba(22,163,74,0.3)]",
+    primary: "bg-edu-primary hover:bg-edu-accent text-white shadow-[0_0_15px_rgba(22,163,74,0.3)] border border-transparent",
     secondary: "bg-edu-card hover:bg-neutral-800 text-edu-primary border border-edu-border",
     outline: "bg-transparent border border-edu-primary text-edu-primary hover:bg-edu-primary/10"
   };
@@ -56,12 +57,13 @@ export const Select: React.FC<React.SelectHTMLAttributes<HTMLSelectElement>> = (
   </div>
 );
 
-export const Badge: React.FC<{ children: React.ReactNode; type?: 'success' | 'warning' | 'danger' | 'neutral' }> = ({ children, type = 'neutral' }) => {
+export const Badge: React.FC<{ children: React.ReactNode; type?: 'success' | 'warning' | 'danger' | 'neutral' | 'focus' }> = ({ children, type = 'neutral' }) => {
   const styles = {
     success: "bg-green-900/40 text-green-400 border-green-800",
     warning: "bg-yellow-900/40 text-yellow-400 border-yellow-800",
     danger: "bg-red-900/40 text-red-400 border-red-800",
-    neutral: "bg-neutral-800 text-gray-300 border-neutral-700"
+    neutral: "bg-neutral-800 text-gray-300 border-neutral-700",
+    focus: "bg-blue-900/40 text-blue-400 border-blue-800"
   };
 
   return (
@@ -93,6 +95,56 @@ export const Modal: React.FC<{ isOpen: boolean; onClose: () => void; title: stri
           {children}
         </div>
       </div>
+    </div>
+  );
+};
+
+export const ProgressBar: React.FC<{ step: number; totalSteps: number; message: string }> = ({ step, totalSteps, message }) => {
+  const progress = Math.min((step / totalSteps) * 100, 100);
+  
+  return (
+    <div className="w-full space-y-2 animate-fade-in">
+      <div className="flex justify-between text-xs font-semibold uppercase tracking-wider text-edu-primary">
+        <span>Processing...</span>
+        <span>{Math.round(progress)}%</span>
+      </div>
+      <div className="h-2 w-full bg-neutral-800 rounded-full overflow-hidden">
+        <div 
+          className="h-full bg-edu-primary transition-all duration-500 ease-out"
+          style={{ width: `${progress}%` }}
+        ></div>
+      </div>
+      <p className="text-center text-sm text-gray-400 font-mono animate-pulse">{message}</p>
+    </div>
+  );
+};
+
+export const Accordion: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; icon?: React.ReactNode }> = ({ 
+  title, 
+  children, 
+  defaultOpen = false,
+  icon
+}) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <div className="border border-edu-border rounded-lg overflow-hidden bg-neutral-900/30">
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between p-4 bg-neutral-900 hover:bg-neutral-800 transition-colors"
+      >
+        <div className="flex items-center gap-3 font-bold text-white">
+          {icon && <span className="text-edu-primary">{icon}</span>}
+          {title}
+        </div>
+        {isOpen ? <ChevronUp size={20} className="text-gray-400" /> : <ChevronDown size={20} className="text-gray-400" />}
+      </button>
+      
+      {isOpen && (
+        <div className="p-4 border-t border-edu-border animate-in slide-in-from-top-2 duration-200">
+          {children}
+        </div>
+      )}
     </div>
   );
 };

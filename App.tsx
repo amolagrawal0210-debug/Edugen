@@ -4,7 +4,7 @@ import NotesGenerator from './components/NotesGenerator';
 import ExamGenerator from './components/ExamGenerator';
 import MathsSolver from './components/MathsSolver';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
-import { BookOpen, FileQuestion, BarChart2, GraduationCap, LayoutDashboard, Menu, X, Calculator, Sun, Moon, LogIn, LogOut, CloudOff, User as UserIcon, Settings, Edit } from 'lucide-react';
+import { BookOpen, FileQuestion, BarChart2, GraduationCap, LayoutDashboard, Menu, X, Calculator, Sun, Moon, LogIn, LogOut, CloudOff, User as UserIcon, Settings, Edit, UserCircle } from 'lucide-react';
 import { Select, Button, Card, Modal, Input } from './components/UIComponents';
 import { 
   loginWithGoogle, 
@@ -358,54 +358,66 @@ const SidebarContent: React.FC<SidebarProps> = ({ activeTab, onTabChange, classL
       )}
     </div>
     
-    <div className="p-4 md:p-6 border-b border-edu-border md:border-none flex-1">
-      {/* Global Class Selector */}
-      <div className="bg-neutral-900/50 p-3 rounded-lg border border-neutral-800 mb-6">
-        <label className="text-[10px] text-edu-primary font-bold uppercase tracking-wider mb-2 block">Student Class</label>
-        <Select 
-          value={classLevel} 
-          onChange={(e) => onClassChange(e.target.value)}
-          className="py-2 text-sm bg-black border-neutral-700 focus:border-edu-primary"
-        >
-          <option value="9">Class 9</option>
-          <option value="10">Class 10</option>
-          <option value="11">Class 11</option>
-          <option value="12">Class 12</option>
-        </Select>
-      </div>
+    <div className="p-4 md:p-6 border-b border-edu-border md:border-none flex-1 flex flex-col justify-between">
+      <div>
+        {/* Global Class Selector */}
+        <div className="bg-neutral-900/50 p-3 rounded-lg border border-neutral-800 mb-6">
+          <label className="text-[10px] text-edu-primary font-bold uppercase tracking-wider mb-2 block">Student Class</label>
+          <Select 
+            value={classLevel} 
+            onChange={(e) => onClassChange(e.target.value)}
+            className="py-2 text-sm bg-black border-neutral-700 focus:border-edu-primary"
+          >
+            <option value="9">Class 9</option>
+            <option value="10">Class 10</option>
+            <option value="11">Class 11</option>
+            <option value="12">Class 12</option>
+          </Select>
+        </div>
 
-      <nav className="space-y-2">
-        <NavButton 
-          active={activeTab === 'dashboard'} 
-          onClick={() => onTabChange('dashboard')} 
-          icon={<LayoutDashboard size={20} />} 
-          label="Dashboard" 
-        />
-        <NavButton 
-          active={activeTab === 'notes'} 
-          onClick={() => onTabChange('notes')} 
-          icon={<BookOpen size={20} />} 
-          label="Smart Notes" 
-        />
-        <NavButton 
-          active={activeTab === 'exam'} 
-          onClick={() => onTabChange('exam')} 
-          icon={<FileQuestion size={20} />} 
-          label="Exam Generator" 
-        />
-        <NavButton 
-          active={activeTab === 'solver'} 
-          onClick={() => onTabChange('solver')} 
-          icon={<Calculator size={20} />} 
-          label="Maths Solver" 
-        />
-        <NavButton 
-          active={activeTab === 'analytics'} 
-          onClick={() => onTabChange('analytics')} 
-          icon={<BarChart2 size={20} />} 
-          label="Student Heatmap" 
-        />
-      </nav>
+        <nav className="space-y-2">
+          <NavButton 
+            active={activeTab === 'dashboard'} 
+            onClick={() => onTabChange('dashboard')} 
+            icon={<LayoutDashboard size={20} />} 
+            label="Dashboard" 
+          />
+          <NavButton 
+            active={activeTab === 'notes'} 
+            onClick={() => onTabChange('notes')} 
+            icon={<BookOpen size={20} />} 
+            label="Smart Notes" 
+          />
+          <NavButton 
+            active={activeTab === 'exam'} 
+            onClick={() => onTabChange('exam')} 
+            icon={<FileQuestion size={20} />} 
+            label="Exam Generator" 
+          />
+          <NavButton 
+            active={activeTab === 'solver'} 
+            onClick={() => onTabChange('solver')} 
+            icon={<Calculator size={20} />} 
+            label="Maths Solver" 
+          />
+          <NavButton 
+            active={activeTab === 'analytics'} 
+            onClick={() => onTabChange('analytics')} 
+            icon={<BarChart2 size={20} />} 
+            label="Student Heatmap" 
+          />
+        </nav>
+      </div>
+      
+      {/* Permanent Settings/Profile Link at Bottom of Nav */}
+       <div className="mt-4 pt-4 border-t border-edu-border">
+          <NavButton 
+            active={false} 
+            onClick={onEditProfile} 
+            icon={<Settings size={20} />} 
+            label="User Settings" 
+          />
+       </div>
     </div>
 
     {/* User Footer */}
@@ -416,9 +428,9 @@ const SidebarContent: React.FC<SidebarProps> = ({ activeTab, onTabChange, classL
           onClick={onEditProfile}
           title="Edit Profile"
         >
-          <img src={user.photoURL || ''} className="w-8 h-8 rounded-full" />
+          <img src={user.photoURL || ''} className="w-8 h-8 rounded-full border border-neutral-700" />
           <div className="text-xs truncate">
-            <p className="text-white font-semibold truncate flex items-center gap-1">{user.displayName} <Edit size={10} className="text-gray-500" /></p>
+            <p className="text-white font-semibold truncate flex items-center gap-1">{user.displayName}</p>
             <p className="text-gray-500 truncate max-w-[80px]">Class {classLevel}</p>
           </div>
         </div>
@@ -435,7 +447,7 @@ const NavButton: React.FC<{ active: boolean; onClick: () => void; icon: React.Re
     onClick={onClick}
     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
       active 
-        ? 'bg-edu-primary/10 text-edu-primary border border-edu-primary/20' 
+        ? 'bg-edu-primary/10 text-edu-primary border border-edu-primary/20 shadow-sm' 
         : 'text-gray-400 hover:bg-neutral-800 hover:text-white'
     }`}
   >
@@ -447,10 +459,10 @@ const NavButton: React.FC<{ active: boolean; onClick: () => void; icon: React.Re
 );
 
 const DashboardHome: React.FC<{ onChangeTab: (tab: any) => void, userName: string }> = ({ onChangeTab, userName }) => (
-  <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
+  <div className="max-w-5xl mx-auto space-y-8 animate-fade-in">
     <div className="text-center space-y-4 py-10">
       <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight">
-        Hello, <span className="text-edu-primary">{userName.split(' ')[0]}</span>!
+        Welcome Back, <span className="text-edu-primary">{userName}!</span>
       </h1>
       <p className="text-xl text-gray-400 max-w-2xl mx-auto">
         Ready to crush your CBSE 2025 exams? Let's get to work.
@@ -465,26 +477,26 @@ const DashboardHome: React.FC<{ onChangeTab: (tab: any) => void, userName: strin
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <FeatureCard 
         icon={<BookOpen className="text-edu-primary" size={32} />}
-        title="AI Power Notes"
-        desc="3-page high-density summaries with bullet points."
+        title="Smart Notes"
+        desc="NCERT-focused, detailed summaries with tables & mnemonics."
         onClick={() => onChangeTab('notes')}
       />
       <FeatureCard 
         icon={<FileQuestion className="text-blue-400" size={32} />}
         title="Exam Simulator"
-        desc="Generate blueprint-aligned papers."
+        desc="Generate blueprint-aligned practice papers instantly."
         onClick={() => onChangeTab('exam')}
       />
       <FeatureCard 
         icon={<Calculator className="text-purple-400" size={32} />}
         title="Maths Solver"
-        desc="Step-by-step solutions for any math problem."
+        desc="Step-by-step solutions with AI coaching insight."
         onClick={() => onChangeTab('solver')}
       />
       <FeatureCard 
         icon={<BarChart2 className="text-red-400" size={32} />}
-        title="Heatmap"
-        desc="Visualize your strong and weak zones."
+        title="Student Heatmap"
+        desc="Visualize your strong and weak performance zones."
         onClick={() => onChangeTab('analytics')}
       />
     </div>
@@ -492,7 +504,7 @@ const DashboardHome: React.FC<{ onChangeTab: (tab: any) => void, userName: strin
 );
 
 const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; desc: string; onClick: () => void }> = ({ icon, title, desc, onClick }) => (
-  <div onClick={onClick} className="bg-neutral-900 border border-neutral-800 p-6 rounded-xl cursor-pointer hover:border-edu-primary hover:bg-neutral-800 transition-all group">
+  <div onClick={onClick} className="bg-neutral-900 border border-neutral-800 p-6 rounded-xl cursor-pointer hover:border-edu-primary hover:bg-neutral-800 transition-all group shadow-lg hover:shadow-xl hover:translate-y-[-2px]">
     <div className="mb-4 bg-black w-14 h-14 rounded-lg flex items-center justify-center border border-neutral-800 group-hover:border-edu-primary/50 transition-colors">
       {icon}
     </div>

@@ -1,8 +1,9 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { solveMathProblem } from '../services/geminiService';
 import { MathSolution } from '../types';
-import { Button, Card, LoadingSpinner } from './UIComponents';
-import { Calculator, Upload, Image as ImageIcon, AlertTriangle, Lightbulb, ScanLine, Camera, X, Crop, MousePointer2 } from 'lucide-react';
+import { Button, Card, LoadingSpinner, Accordion } from './UIComponents';
+import { Calculator, Upload, Image as ImageIcon, AlertTriangle, Lightbulb, ScanLine, Camera, X, Crop, MousePointer2, CheckCircle, ListOrdered, Sparkles } from 'lucide-react';
 
 const MathsSolver: React.FC = () => {
   const [problemText, setProblemText] = useState('');
@@ -18,11 +19,10 @@ const MathsSolver: React.FC = () => {
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const lensInputRef = useRef<HTMLInputElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, isLens: boolean = false) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -31,14 +31,9 @@ const MathsSolver: React.FC = () => {
         // Keep the raw base64 data separate from the Data URL for logic
         const base64Data = base64String.split(',')[1]; 
         
-        if (isLens) {
-          // Open Cropper for Lens
-          setTempImage(base64Data);
-          setShowCropper(true);
-        } else {
-          // Direct upload (legacy behavior)
-          setImage(base64Data);
-        }
+        // AUTO TRIGGER LOGIC: Open cropper immediately for precision
+        setTempImage(base64Data);
+        setShowCropper(true);
       };
       reader.readAsDataURL(file);
     }
@@ -70,7 +65,6 @@ const MathsSolver: React.FC = () => {
   const clearImage = () => {
     setImage(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
-    if (lensInputRef.current) lensInputRef.current.value = '';
   };
 
   // --- Cropper Logic ---
@@ -84,8 +78,6 @@ const MathsSolver: React.FC = () => {
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     if (!containerRef.current) return;
-    // Don't prevent default on touch to allow scrolling if needed, 
-    // but here we are in a modal so preventing default stops scrolling which is good.
     e.preventDefault(); 
     
     const rect = containerRef.current.getBoundingClientRect();
@@ -152,6 +144,8 @@ const MathsSolver: React.FC = () => {
       
       setImage(croppedBase64); // Show the cropped version in main UI
       setShowCropper(false);
+      
+      // AUTO TRIGGER SOLVE
       handleSolveInternal(undefined, croppedBase64);
     };
     sourceImage.src = `data:image/png;base64,${tempImage}`;
@@ -170,44 +164,7 @@ const MathsSolver: React.FC = () => {
         </h2>
         
         <div className="space-y-6 relative z-10">
-          {/* Edu Lens Section */}
-          <div className="bg-gradient-to-r from-indigo-900/40 to-purple-900/40 border border-indigo-500/30 rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-             <div className="flex items-center gap-4">
-                <div className="bg-indigo-500 p-3 rounded-full text-white shadow-lg shadow-indigo-500/20">
-                   <ScanLine size={32} />
-                </div>
-                <div>
-                   <h3 className="text-xl font-bold text-white">Edu Lens</h3>
-                   <p className="text-indigo-200 text-sm">Instant photo solution. Supports multiple problems.</p>
-                </div>
-             </div>
-             
-             <input 
-                type="file" 
-                ref={lensInputRef}
-                accept="image/*" 
-                // capture="environment" // Optional: prefer back camera on mobile
-                className="hidden" 
-                onChange={(e) => handleImageUpload(e, true)} 
-              />
-             <button 
-               onClick={() => lensInputRef.current?.click()}
-               className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-xl font-bold shadow-lg shadow-indigo-600/30 transition-all transform hover:scale-105 flex items-center gap-3 w-full md:w-auto justify-center"
-             >
-                <Camera size={24} />
-                Activate Edu Lens
-             </button>
-          </div>
-
-          <div className="relative">
-             <div className="absolute inset-0 flex items-center">
-               <div className="w-full border-t border-neutral-800"></div>
-             </div>
-             <div className="relative flex justify-center text-xs uppercase">
-               <span className="bg-edu-card px-2 text-gray-500 font-semibold">Or Type Problem Manually</span>
-             </div>
-          </div>
-
+          {/* Main Input Area */}
           <div className="bg-black/40 p-4 rounded-xl border border-neutral-800">
             <textarea
               className="w-full bg-transparent border-none text-white placeholder-neutral-500 focus:ring-0 resize-none h-24 text-lg"
@@ -222,20 +179,20 @@ const MathsSolver: React.FC = () => {
                     type="file" 
                     ref={fileInputRef}
                     accept="image/*" 
-                    onChange={(e) => handleImageUpload(e, false)} 
+                    onChange={handleImageUpload} 
                     className="hidden" 
                   />
                   <button 
                     onClick={() => fileInputRef.current?.click()}
-                    className="text-gray-400 hover:text-white flex items-center gap-2 text-sm transition-colors"
+                    className="text-white bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-all shadow-lg shadow-indigo-500/20"
                   >
-                    <Upload size={16} /> Upload Image
+                    <Camera size={16} /> Snap/Upload Problem
                   </button>
                   
                   {image && (
-                    <div className="flex items-center gap-2 bg-neutral-800 px-3 py-1 rounded-full border border-neutral-700 ml-2 animate-fade-in">
+                    <div className="flex items-center gap-2 bg-neutral-800 px-3 py-1.5 rounded-full border border-neutral-700 ml-2 animate-fade-in">
                       <ImageIcon size={14} className="text-edu-primary" />
-                      <span className="text-xs text-white">Image Attached</span>
+                      <span className="text-xs text-white">Image Ready</span>
                       <button onClick={clearImage} className="text-gray-500 hover:text-red-400">
                         <X size={14} />
                       </button>
@@ -243,21 +200,21 @@ const MathsSolver: React.FC = () => {
                   )}
                </div>
                
-               <Button onClick={handleSolve} disabled={loading || (!problemText && !image)} className="px-8">
-                 {loading ? 'Solving...' : 'Solve'}
+               <Button onClick={() => handleSolve()} disabled={loading || (!problemText && !image)} className="px-8">
+                 {loading ? 'Analyzing...' : 'Solve Problem'}
                </Button>
             </div>
           </div>
         </div>
       </Card>
 
-      {/* Edu Lens Cropper Modal */}
+      {/* Cropper Modal */}
       {showCropper && tempImage && (
         <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-lg mb-4 flex justify-between items-center text-white">
              <div>
-                <h3 className="font-bold text-lg flex items-center gap-2"><Crop size={20} className="text-indigo-400"/> Select One Problem</h3>
-                <p className="text-xs text-gray-400">Drag a box around the specific question you want to solve.</p>
+                <h3 className="font-bold text-lg flex items-center gap-2"><Crop size={20} className="text-indigo-400"/> Crop Problem</h3>
+                <p className="text-xs text-gray-400">Select the specific question to solve.</p>
              </div>
              <button onClick={() => setShowCropper(false)} className="p-2 hover:bg-white/10 rounded-full"><X /></button>
           </div>
@@ -276,19 +233,14 @@ const MathsSolver: React.FC = () => {
              <img 
                ref={imageRef}
                src={`data:image/png;base64,${tempImage}`} 
-               className="max-h-[65vh] max-w-full object-contain pointer-events-none"
+               className="max-h-[60vh] max-w-full object-contain pointer-events-none"
                onLoad={(e) => {
-                   // Optional: Auto-select center or full image on load? 
-                   // Let's start with full selection to be user friendly
                    const t = e.currentTarget;
-                   // Wait for render
                    setTimeout(() => {
                        if (t) setCropRect({ x: 0, y: 0, w: t.clientWidth, h: t.clientHeight });
                    }, 50);
                }}
              />
-             
-             {/* Darken overlay outside selection */}
              <div className="absolute inset-0 bg-black/50 pointer-events-none" 
                   style={{
                     clipPath: cropRect && cropRect.w > 0 
@@ -296,7 +248,6 @@ const MathsSolver: React.FC = () => {
                       : 'none'
                   }}>
              </div>
-
              {cropRect && cropRect.w > 0 && (
                <div 
                  className="absolute border-2 border-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.5)] bg-transparent pointer-events-none"
@@ -306,119 +257,91 @@ const MathsSolver: React.FC = () => {
                    width: cropRect.w,
                    height: cropRect.h
                  }}
-               >
-                 {/* Corner handles purely visual */}
-                 <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-white rounded-full shadow border border-indigo-500"></div>
-                 <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-white rounded-full shadow border border-indigo-500"></div>
-                 <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white rounded-full shadow border border-indigo-500"></div>
-                 <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white rounded-full shadow border border-indigo-500"></div>
-               </div>
+               />
              )}
           </div>
           
           <div className="mt-6 flex gap-4 w-full max-w-lg">
-             <Button variant="secondary" className="flex-1" onClick={() => {
-                if (imageRef.current) {
-                    setCropRect({ x: 0, y: 0, w: imageRef.current.clientWidth, h: imageRef.current.clientHeight });
-                }
-             }}>
-               Reset
-             </Button>
-             <Button className="flex-[2] bg-indigo-600 hover:bg-indigo-500" onClick={performCropAndSolve} disabled={!cropRect || cropRect.w < 10}>
-               Solve Selection
+             <Button variant="secondary" className="flex-1" onClick={() => setShowCropper(false)}>Cancel</Button>
+             <Button className="flex-[2] bg-indigo-600 hover:bg-indigo-500" onClick={performCropAndSolve}>
+               Analyze Selection
              </Button>
           </div>
         </div>
       )}
 
-      {/* Loading State specific to Lens */}
-      {loading && (
+      {/* Loading State */}
+      {loading && !showCropper && (
          <div className="flex flex-col items-center justify-center p-12 bg-neutral-900/50 rounded-xl border border-neutral-800 animate-pulse">
             <div className="relative">
                <div className="absolute inset-0 bg-edu-primary blur-xl opacity-20 animate-pulse"></div>
                <ScanLine size={48} className="text-edu-primary relative z-10 animate-bounce" />
             </div>
-            <h3 className="text-white font-bold mt-6 text-xl">Analyzing with Edu Lens...</h3>
-            <p className="text-gray-400 text-sm mt-2">Identifying patterns & calculating steps</p>
+            <h3 className="text-white font-bold mt-6 text-xl">Analyzing Problem...</h3>
+            <p className="text-gray-400 text-sm mt-2">Identifying numbers, symbols & logic</p>
          </div>
       )}
 
       {/* Results */}
       {solution && !loading && (
-        <div className="animate-fade-in space-y-6">
-          {/* Problem Statement */}
-          <div className="bg-neutral-900/50 border-l-4 border-l-indigo-500 p-4 rounded-r-lg">
-            <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-1">Problem</h3>
-            <p className="text-white text-lg font-medium">{solution.problemStatement}</p>
-          </div>
+        <div className="animate-fade-in space-y-4">
+          
+          {/* 1. Final Answer Accordion */}
+          <Accordion title="Final Answer" defaultOpen={true} icon={<CheckCircle size={18} />}>
+            <div className="text-center py-4">
+               <div className="inline-block bg-green-900/20 text-green-400 text-2xl font-black px-8 py-4 rounded-xl border border-green-800 shadow-lg">
+                  {solution.finalAnswer}
+               </div>
+               <p className="text-gray-400 mt-2 text-sm">{solution.problemStatement}</p>
+            </div>
+          </Accordion>
 
-          {/* Solution Paper View */}
-          <div className="bg-white text-black rounded-xl overflow-hidden shadow-2xl">
-              <div className="bg-edu-primary p-4 border-b border-green-600">
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <span className="bg-white text-edu-primary w-6 h-6 rounded-full flex items-center justify-center text-sm font-black">✓</span>
-                  Solution
-                </h3>
-              </div>
-              
-              <div className="p-6 md:p-8 space-y-8 bg-white min-h-[400px]">
+          {/* 2. Step-by-Step Accordion */}
+          <Accordion title="Step-by-Step CBSE Method" defaultOpen={true} icon={<ListOrdered size={18} />}>
+            <div className="space-y-6 px-2">
                 {solution.steps.map((step, idx) => (
-                  <div key={idx} className="relative pl-6 border-l-2 border-gray-200 hover:border-edu-primary transition-colors pb-2">
-                      <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-white border-2 border-edu-primary"></div>
+                  <div key={idx} className="relative pl-6 border-l-2 border-neutral-700 hover:border-edu-primary transition-colors pb-2">
+                      <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-neutral-900 border-2 border-edu-primary"></div>
                       
-                      <h4 className="font-bold text-gray-800 text-lg mb-1 leading-none">{step.stepTitle}</h4>
-                      <p className="text-gray-600 mb-3 text-sm">{step.description}</p>
+                      <h4 className="font-bold text-white text-lg mb-1 leading-none">{step.stepTitle}</h4>
+                      <p className="text-gray-400 mb-3 text-sm">{step.description}</p>
                       
                       {step.equation && (
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 font-serif text-xl md:text-2xl text-center text-gray-900 my-2 shadow-sm overflow-x-auto">
+                        <div className="bg-neutral-800 p-3 rounded-lg border border-neutral-700 font-mono text-lg text-center text-green-300 my-2 overflow-x-auto">
                           {step.equation}
                         </div>
                       )}
                   </div>
                 ))}
-                
-                <div className="mt-8 pt-8 border-t-2 border-dashed border-gray-200">
-                    <p className="text-gray-500 text-sm uppercase font-bold text-center mb-2">Final Answer</p>
-                    <div className="text-center">
-                      <span className="inline-block bg-green-100 text-green-800 text-3xl font-black px-6 py-3 rounded-xl border-2 border-green-200 shadow-sm">
-                          {solution.finalAnswer}
-                      </span>
-                    </div>
+            </div>
+          </Accordion>
+
+          {/* 3. AI Insight Accordion */}
+          <Accordion title="AI Insight & Coaching Tips" defaultOpen={false} icon={<Sparkles size={18} />}>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="text-yellow-500 font-bold mb-3 flex items-center gap-2"><Lightbulb size={16}/> Key Concepts</h4>
+                  <ul className="space-y-2">
+                    {solution.keyTips.map((tip, i) => (
+                      <li key={i} className="flex gap-2 text-gray-300 text-sm">
+                        <span className="text-yellow-500">•</span> {tip}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              </div>
-          </div>
+                <div>
+                  <h4 className="text-red-400 font-bold mb-3 flex items-center gap-2"><AlertTriangle size={16}/> Common Mistakes</h4>
+                  <ul className="space-y-2">
+                    {solution.commonErrors.map((err, i) => (
+                      <li key={i} className="flex gap-2 text-gray-300 text-sm">
+                        <span className="text-red-500">•</span> {err}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+             </div>
+          </Accordion>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="bg-yellow-900/10 border-yellow-900/50">
-              <h3 className="text-lg font-bold text-yellow-500 mb-4 flex items-center gap-2">
-                <Lightbulb size={20} />
-                Key Tips to Remember
-              </h3>
-              <ul className="space-y-3">
-                {solution.keyTips.map((tip, i) => (
-                  <li key={i} className="flex gap-3 text-gray-300 text-sm">
-                    <span className="text-yellow-500 mt-0.5">•</span>
-                    {tip}
-                  </li>
-                ))}
-              </ul>
-            </Card>
-
-            <Card className="bg-red-900/10 border-red-900/50">
-              <h3 className="text-lg font-bold text-red-500 mb-4 flex items-center gap-2">
-                <AlertTriangle size={20} />
-                Commonly Made Errors
-              </h3>
-              <ul className="space-y-3">
-                {solution.commonErrors.map((err, i) => (
-                  <li key={i} className="flex gap-3 text-gray-300 text-sm">
-                    <span className="text-red-500 mt-0.5">•</span>
-                    {err}
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          </div>
         </div>
       )}
     </div>

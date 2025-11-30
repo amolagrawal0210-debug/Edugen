@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { analyzeStudentPerformance } from '../services/geminiService';
 import { AnalyticsData } from '../types';
@@ -88,18 +89,19 @@ const AnalyticsDashboard: React.FC = () => {
                   <XAxis type="number" domain={[0, 100]} stroke="#666" />
                   <YAxis dataKey="subject" type="category" stroke="#fff" width={80} />
                   <Tooltip content={<CustomTooltip />} cursor={{fill: '#1a1a1a'}} />
+                  {/* Updated Colors: High Contrast Neon Green, Bright Orange, Deep Red */}
                   <Bar dataKey="masteryScore" barSize={20} radius={[0, 4, 4, 0]}>
                     {displayData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.masteryScore > 70 ? '#16a34a' : entry.masteryScore > 40 ? '#ca8a04' : '#dc2626'} />
+                      <Cell key={`cell-${index}`} fill={entry.masteryScore > 75 ? '#22c55e' : entry.masteryScore > 40 ? '#f97316' : '#ef4444'} />
                     ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-4 flex gap-4 text-xs text-gray-400 justify-center">
-              <span className="flex items-center gap-1"><div className="w-3 h-3 bg-green-600 rounded-sm"></div> Green Zone (Mastered)</span>
-              <span className="flex items-center gap-1"><div className="w-3 h-3 bg-yellow-600 rounded-sm"></div> Learning Zone</span>
-              <span className="flex items-center gap-1"><div className="w-3 h-3 bg-red-600 rounded-sm"></div> Dark Zone (Revision Needed)</span>
+            <div className="mt-4 flex flex-wrap gap-4 text-xs text-gray-400 justify-center">
+              <span className="flex items-center gap-2"><div className="w-3 h-3 bg-green-500 rounded-sm"></div> Green Zone (Mastered &gt; 75%)</span>
+              <span className="flex items-center gap-2"><div className="w-3 h-3 bg-orange-500 rounded-sm"></div> Focus Zone (Weak 40-75%)</span>
+              <span className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-sm"></div> Dark Zone (Weakest &lt; 40%)</span>
             </div>
           </Card>
           
@@ -121,29 +123,29 @@ const AnalyticsDashboard: React.FC = () => {
           </Card>
         </div>
 
-        {/* Side Panel Breakdown */}
+        {/* Side Panel Breakdown with Clear Borders */}
         <div className="space-y-6">
            {displayData.map((item, idx) => (
-             <Card key={idx} className="border-l-2 border-l-edu-primary">
-               <div className="flex justify-between items-center mb-2">
-                 <h4 className="font-bold text-white">{item.subject}</h4>
-                 <span className="text-xs text-gray-500">{item.lastStudied}</span>
+             <Card key={idx} className={`border-l-4 ${item.masteryScore > 75 ? 'border-l-green-500 border-green-900/30' : item.masteryScore > 40 ? 'border-l-orange-500 border-orange-900/30' : 'border-l-red-500 border-red-900/30'} bg-neutral-900/50`}>
+               <div className="flex justify-between items-center mb-2 border-b border-neutral-800 pb-2">
+                 <h4 className="font-bold text-white text-lg">{item.subject}</h4>
+                 <Badge type={item.masteryScore > 75 ? 'success' : item.masteryScore > 40 ? 'warning' : 'danger'}>{item.masteryScore}%</Badge>
                </div>
                
                <div className="mb-3">
-                 <div className="text-xs text-green-400 mb-1 font-semibold uppercase">Strong Topics</div>
+                 <div className="text-xs text-green-400 mb-1 font-semibold uppercase flex items-center gap-1"><Zap size={10} /> Strong Topics</div>
                  <div className="flex flex-wrap gap-1">
                    {item.topicsStrong.length > 0 ? item.topicsStrong.map(t => (
-                     <span key={t} className="px-2 py-0.5 bg-green-900/30 border border-green-900 rounded text-xs text-green-300">{t}</span>
+                     <span key={t} className="px-2 py-0.5 bg-green-900/20 border border-green-900/50 rounded text-xs text-green-300">{t}</span>
                    )) : <span className="text-gray-600 text-xs italic">None detected</span>}
                  </div>
                </div>
 
                <div>
-                 <div className="text-xs text-red-400 mb-1 font-semibold uppercase">Dark Zones (Weak)</div>
+                 <div className="text-xs text-red-400 mb-1 font-semibold uppercase flex items-center gap-1"><AlertOctagon size={10} /> Weak Areas</div>
                  <div className="flex flex-wrap gap-1">
                    {item.topicsWeak.length > 0 ? item.topicsWeak.map(t => (
-                     <span key={t} className="px-2 py-0.5 bg-red-900/30 border border-red-900 rounded text-xs text-red-300">{t}</span>
+                     <span key={t} className="px-2 py-0.5 bg-red-900/20 border border-red-900/50 rounded text-xs text-red-300">{t}</span>
                    )) : <span className="text-gray-600 text-xs italic">None detected</span>}
                  </div>
                </div>

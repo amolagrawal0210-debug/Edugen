@@ -1,9 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { generateStudyNotes } from '../services/geminiService';
 import { StudyNote, SavedItem, User } from '../types';
-import { Button, Card, Input, Select, LoadingSpinner, Badge } from './UIComponents';
-import { BookOpen, Printer, Lightbulb, Save, History, ChevronRight, Search, FileText } from 'lucide-react';
+import { Button, Card, Input, Select, LoadingSpinner, Badge, ProgressBar } from './UIComponents';
+import { BookOpen, Printer, Lightbulb, Save, History, ChevronRight, Search, FileText, Sparkles } from 'lucide-react';
 import { jsPDF } from "jspdf";
 import html2canvas from 'html2canvas';
 import { saveGeneratedItem, getSavedItems } from '../services/firebaseService';
@@ -13,6 +13,17 @@ interface NotesGeneratorProps {
   user: User | null;
 }
 
+// Simple topic suggestions map
+const SUGGESTED_TOPICS: Record<string, string[]> = {
+  'Physics': ['Light: Reflection and Refraction', 'Electricity', 'Human Eye', 'Motion', 'Gravitation', 'Force and Laws of Motion'],
+  'Chemistry': ['Chemical Reactions', 'Acids, Bases and Salts', 'Metals and Non-metals', 'Carbon and its Compounds', 'Atoms and Molecules'],
+  'Mathematics': ['Real Numbers', 'Polynomials', 'Triangles', 'Trigonometry', 'Statistics', 'Probability', 'Circles'],
+  'Biology': ['Life Processes', 'Control and Coordination', 'Reproduction', 'Heredity', 'Our Environment'],
+  'Computer Science': ['Python Basics', 'Data Handling', 'SQL', 'Networking', 'Cyber Safety'],
+  'Social Science': ['Rise of Nationalism in Europe', 'Resources and Development', 'Power Sharing', 'Federalism'],
+  'English': ['Letter to God', 'Nelson Mandela', 'Tenses', 'Modals', 'Reported Speech']
+};
+
 const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel, user }) => {
   const [activeView, setActiveView] = useState<'create' | 'saved'>('create');
   
@@ -21,6 +32,10 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel, user }) => 
   const [subject, setSubject] = useState('Physics');
   const [language, setLanguage] = useState('English');
   const [loading, setLoading] = useState(false);
+  
+  // Progress State
+  const [progressStep, setProgressStep] = useState(0);
+  const [progressMsg, setProgressMsg] = useState('');
   
   // Data States
   const [note, setNote] = useState<StudyNote | null>(null);
@@ -41,16 +56,33 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel, user }) => 
     if (!user) return;
     setLoadingSaved(true);
     const notes = await getSavedItems(user.uid, 'note');
-    // Removed mindmap fetching
     const combined = [...notes].sort((a, b) => b.createdAt - a.createdAt);
     setSavedItems(combined);
     setLoadingSaved(false);
+  };
+
+  const simulateProgress = () => {
+    setProgressStep(1);
+    setProgressMsg('Step 1 of 3: Analyzing NCERT Chapters...');
+    
+    const t1 = setTimeout(() => {
+        setProgressStep(2);
+        setProgressMsg('Step 2 of 3: Structuring Concepts & Tables...');
+    }, 3000);
+    
+    const t2 = setTimeout(() => {
+        setProgressStep(3);
+        setProgressMsg('Step 3 of 3: Finalizing Mnemonics & Exam Questions...');
+    }, 8000);
+    
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   };
 
   const handleGenerate = async () => {
     if (!topic) return;
     setLoading(true);
     setNote(null);
+    const clearProgress = simulateProgress();
     
     try {
       const data = await generateStudyNotes(topic, classLevel, subject, language);
@@ -58,7 +90,9 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel, user }) => 
     } catch (error: any) {
       alert(error.message || "Failed to generate content. Please try again.");
     } finally {
+      clearProgress();
       setLoading(false);
+      setProgressStep(0);
     }
   };
 
@@ -151,7 +185,7 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel, user }) => 
           <Card className="border-t-4 border-t-edu-primary">
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
               <BookOpen className="text-edu-primary" />
-              Generate Study Notes
+              Generate Smart Notes
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -172,24 +206,32 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel, user }) => 
                 <option value="Social Science">Social Science</option>
                 <option value="Hindi">Hindi</option>
               </Select>
-              <Input 
-                placeholder="Enter Topic (e.g., Photosynthesis)" 
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                className="md:col-span-2"
-              />
-              <div className="md:col-span-5 flex flex-col items-center gap-1">
-                <Button onClick={handleGenerate} disabled={loading || !topic} className="w-full md:w-1/2">
-                  {loading ? 'Generating Notes...' : 'Generate Notes'}
-                </Button>
-                <span className="text-[10px] text-gray-500 font-mono">
-                  Estimated time: ~10-15s
-                </span>
+              
+              <div className="md:col-span-2 relative">
+                <Input 
+                  list="topic-suggestions"
+                  placeholder="Enter Topic (e.g., Photosynthesis)" 
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                />
+                <datalist id="topic-suggestions">
+                   {SUGGESTED_TOPICS[subject]?.map((t) => <option key={t} value={t} />)}
+                </datalist>
+              </div>
+
+              <div className="md:col-span-5 flex flex-col items-center gap-1 mt-2">
+                {!loading ? (
+                    <Button onClick={handleGenerate} disabled={!topic} className="w-full md:w-1/3">
+                      <Sparkles size={18} /> Generate Notes
+                    </Button>
+                ) : (
+                    <div className="w-full md:w-1/2">
+                       <ProgressBar step={progressStep} totalSteps={3} message={progressMsg} />
+                    </div>
+                )}
               </div>
             </div>
           </Card>
-
-          {loading && <LoadingSpinner />}
 
           {/* Render STUDY NOTES */}
           {note && !loading && (
@@ -285,7 +327,9 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel, user }) => 
 
            {loadingSaved ? <LoadingSpinner /> : (
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               {filteredItems.length > 0 ? filteredItems.map((item) => (
+               {filteredItems.length > 0 ? filteredItems.map((item) => {
+                 const noteData = item.data as StudyNote;
+                 return (
                  <div key={item.id} className="bg-neutral-900 border border-neutral-800 p-4 rounded-xl flex justify-between items-center hover:border-edu-primary transition-colors cursor-pointer" onClick={() => handleViewSaved(item)}>
                     <div className="overflow-hidden">
                       <div className="flex items-center gap-2 mb-1">
@@ -293,13 +337,16 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel, user }) => 
                          <Badge type="neutral" >NOTES</Badge>
                       </div>
                       <h3 className="font-bold text-white text-lg truncate">{item.title}</h3>
-                      <p className="text-sm text-gray-500 truncate">{item.subject} • {new Date(item.createdAt).toLocaleDateString()}</p>
+                      <div className="text-sm text-gray-500 flex flex-col gap-0.5 mt-1">
+                          <span className="font-semibold text-gray-400">{item.subject} • Class {noteData.classLevel}</span>
+                          <span className="text-xs">Generated: {new Date(item.createdAt).toLocaleDateString()}</span>
+                      </div>
                     </div>
                     <Button variant="outline" className="h-10 w-10 !p-0 rounded-full flex items-center justify-center shrink-0">
                       <ChevronRight size={20} />
                     </Button>
                  </div>
-               )) : (
+               )}) : (
                  <div className="col-span-2 text-center py-20 text-gray-500">
                    {searchQuery ? "No matching items found." : "No saved notes found."}
                  </div>

@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { generateExamPaper } from '../services/geminiService';
 import { ExamPaper, QuestionType, Difficulty, ExamType, SavedItem, User } from '../types';
-import { Button, Card, Input, Select, LoadingSpinner, Badge } from './UIComponents';
-import { FileQuestion, CheckCircle, Brain, AlertTriangle, Book, Calendar, Download, ImageIcon, Save, History, ChevronRight, Search } from 'lucide-react';
+import { Button, Card, Input, Select, LoadingSpinner, Badge, ProgressBar } from './UIComponents';
+import { FileQuestion, CheckCircle, Brain, AlertTriangle, Book, Calendar, Download, ImageIcon, Save, History, ChevronRight, Search, Sparkles } from 'lucide-react';
 import { jsPDF } from "jspdf";
 import html2canvas from 'html2canvas';
 import { saveGeneratedItem, getSavedItems } from '../services/firebaseService';
@@ -26,6 +26,10 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel, user }) => {
   const [showAnswers, setShowAnswers] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Progress State
+  const [progressStep, setProgressStep] = useState(0);
+  const [progressMsg, setProgressMsg] = useState('');
+
   // Saved State
   const [savedExams, setSavedExams] = useState<SavedItem[]>([]);
   const [loadingSaved, setLoadingSaved] = useState(false);
@@ -45,6 +49,23 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel, user }) => {
     setLoadingSaved(false);
   };
 
+  const simulateProgress = () => {
+    setProgressStep(1);
+    setProgressMsg('Step 1 of 3: Analyzing Syllabus & Blueprint...');
+    
+    const t1 = setTimeout(() => {
+        setProgressStep(2);
+        setProgressMsg('Step 2 of 3: Drafting Questions & Diagrams...');
+    }, 5000);
+    
+    const t2 = setTimeout(() => {
+        setProgressStep(3);
+        setProgressMsg('Step 3 of 3: Finalizing Answer Key & Formatting...');
+    }, 12000);
+    
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  };
+
   const handleCreate = async () => {
     if (examType !== ExamType.ANNUAL && !syllabus.trim()) {
       alert("Please enter the syllabus/chapters for this exam.");
@@ -54,13 +75,18 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel, user }) => {
     setLoading(true);
     setExam(null);
     setShowAnswers(false);
+    
+    const clearProgress = simulateProgress();
+
     try {
       const data = await generateExamPaper(syllabus, classLevel, subject, examType, language);
       setExam(data);
     } catch (error: any) {
       alert(error.message || "Error creating exam.");
     } finally {
+      clearProgress();
       setLoading(false);
+      setProgressStep(0);
     }
   };
 
@@ -376,24 +402,34 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel, user }) => {
               </label>
               <div className="relative">
                 <Input 
+                  list="syllabus-suggestions"
                   placeholder="e.g. Chapter 1: Real Numbers, Chapter 2: Polynomials..." 
                   value={syllabus}
                   onChange={(e) => setSyllabus(e.target.value)}
                   disabled={isFullSyllabus}
                   className={isFullSyllabus ? "opacity-50 cursor-not-allowed italic" : ""}
                 />
+                <datalist id="syllabus-suggestions">
+                   <option value="Chapter 1, Chapter 2, Chapter 3" />
+                   <option value="Full Syllabus (Mock Test)" />
+                   <option value="Chapters: Light, Electricity, Human Eye" />
+                   <option value="Calculus Unit: Continuity, Integrals" />
+                </datalist>
               </div>
             </div>
 
-            <div className="flex flex-col items-end gap-1">
-              <Button onClick={handleCreate} disabled={loading || (!syllabus && !isFullSyllabus)}>
-                {loading ? 'Designing Paper...' : 'Generate Exam Paper'}
-              </Button>
-              <span className="text-[10px] text-gray-500 font-mono">Estimated time: ~20-40s</span>
+            <div className="flex flex-col items-end gap-1 mt-4">
+              {!loading ? (
+                <Button onClick={handleCreate} disabled={(!syllabus && !isFullSyllabus)}>
+                   <Sparkles size={18} /> Generate Exam Paper
+                </Button>
+              ) : (
+                <div className="w-full md:w-1/2">
+                   <ProgressBar step={progressStep} totalSteps={3} message={progressMsg} />
+                </div>
+              )}
             </div>
           </Card>
-
-          {loading && <LoadingSpinner />}
 
           {exam && !loading && (
             <div id="exam-paper-container" className="animate-fade-in space-y-6">
@@ -521,7 +557,10 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel, user }) => {
                  <div key={item.id} className="bg-neutral-900 border border-neutral-800 p-4 rounded-xl flex justify-between items-center hover:border-edu-primary transition-colors cursor-pointer" onClick={() => handleViewSaved(item)}>
                     <div className="overflow-hidden">
                       <h3 className="font-bold text-white text-lg truncate">{item.title}</h3>
-                      <p className="text-sm text-gray-500 truncate">{item.subject} • {new Date(item.createdAt).toLocaleDateString()}</p>
+                      <div className="text-sm text-gray-500 flex flex-col gap-0.5 mt-1">
+                          <span className="font-semibold text-gray-400">{item.subject}</span>
+                          <span className="text-xs">Generated: {new Date(item.createdAt).toLocaleDateString()}</span>
+                      </div>
                     </div>
                     <Button variant="outline" className="h-10 w-10 !p-0 rounded-full flex items-center justify-center shrink-0">
                       <ChevronRight size={20} />
