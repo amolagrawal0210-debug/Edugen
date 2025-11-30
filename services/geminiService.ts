@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type, Schema } from "@google/genai";
-import { StudyNote, ExamPaper, AnalyticsData, QuestionType, Difficulty, ExamType, MathSolution, MindMapData } from "../types";
+import { StudyNote, ExamPaper, AnalyticsData, QuestionType, Difficulty, ExamType, MathSolution } from "../types";
 
 // Initialize Gemini Client safely for both Vite (Vercel) and other environments
 const getApiKey = (): string => {
@@ -29,7 +29,8 @@ const apiKey = getApiKey();
 const ai = new GoogleGenAI({ apiKey: apiKey || 'dummy_key_to_init' });
 
 // Constants for Models
-const MODEL_TEXT = 'gemini-2.5-flash';
+// Switching to Flash Lite as requested for speed/efficiency
+const MODEL_TEXT = 'gemini-2.0-flash-lite-preview-02-05';
 
 // Helper to validate key before calling
 const validateKey = () => {
@@ -50,27 +51,44 @@ export const generateStudyNotes = async (
   const effectiveLanguage = subject.toLowerCase() === 'hindi' ? 'Hindi' : language;
 
   const langInstruction = effectiveLanguage === 'Hindi' 
-    ? "**CRITICAL: GENERATE ALL CONTENT IN HINDI LANGUAGE (Devanagari Script).** You can use English technical terms in brackets like 'कोशिका (Cell)'. The Intro hook should be in natural conversational Hindi (e.g., 'भाई, यह टॉपिक...')." 
+    ? "**CRITICAL: GENERATE ALL CONTENT IN HINDI LANGUAGE (Devanagari Script).** Use standard NCERT Hindi terminology. You can use English technical terms in brackets like 'कोशिका (Cell)'. The Intro hook should be in natural conversational Hindi." 
     : "Generate content in English.";
 
+  // UPDATED PROMPT: Strict NCERT Alignment & Comprehensive Coverage
   const prompt = `
-    Act as "EduGen", a Gen-Z friendly, expert CBSE teacher.
-    Create "Teacher Science Full Notes" style content.
-    ${langInstruction}
+    Act as a Senior CBSE Board Examiner and Expert Subject Tutor.
+    Create **COMPREHENSIVE, NCERT-MASTERY STUDY NOTES** for:
     
-    Details:
-    Class: ${classLevel}
-    Subject: ${subject}
-    Topic: ${topic}
+    **Context:**
+    - Class: ${classLevel} (CBSE/NCERT Curriculum)
+    - Subject: ${subject}
+    - Chapter/Topic: ${topic}
+    ${langInstruction}
 
-    **Style Guide (Strictly Follow):**
-    1. **Intro Hook**: Start with a conversational, friendly intro. Explain why it matters.
-    2. **High Density Content**: Use bullet points.
-    3. **Comparison Tables**: ALWAYS include at least one comparison table.
-    4. **Memory Hacks**: Include a "Mnemonics/Tricks" section.
-    5. **IST (It's a Sawal Time)**: A section with 3-4 short Q&A for practice.
-    6. **MCQs**: 3-4 practice MCQs.
-    7. **Visuals**: Keep descriptions vivid.
+    **CORE INSTRUCTION:**
+    Your goal is to generate a **complete replacement for the textbook** for revision. 
+    You must cover **100% of the NCERT syllabus** for this chapter. 
+    **DO NOT SKIP** any sub-topic, definition, diagram description, derivation, or important example mentioned in the NCERT book.
+
+    **DETAILED STRUCTURE REQUIREMENTS:**
+    1.  **Intro Hook**: A short, engaging real-world application to spark interest (Gen-Z friendly but professional).
+    2.  **Deep-Dive Sections**: 
+        - Break the chapter down into **ALL** its logical NCERT sub-headings.
+        - For each section, provide **detailed explanations**, not just summaries. 
+        - Include **Laws, Principles, Theorems, and Chemical Equations** explicitly where applicable.
+        - For Math/Physics: Include step-by-step **Derivations** and **Formula Lists**.
+        - For History/Social: Include Dates, Events, Causes, and Consequences.
+    3.  **Comparison Tables**: Mandatorily include tables for confusing terms (e.g., Mitosis vs Meiosis, Concave vs Convex) if applicable.
+    4.  **Mnemonics**: Smart memory hacks to remember lists or sequences.
+    5.  **Exam Corner**:
+        - **IST (It's a Sawal Time)**: 3-4 High-yield Competency/Short Answer questions.
+        - **MCQs**: 3-4 Tricky Board-style MCQs.
+    6.  **Summary Table**: A quick "Cheat Sheet" revision table.
+
+    **QUALITY CHECKS:**
+    - Is the content sufficient for a student to score 100%? Yes.
+    - Are technical terms accurate? Yes.
+    - Is the tone encouraging? Yes.
 
     **Output**: Return valid JSON only based on the schema.
   `;
@@ -165,7 +183,7 @@ export const generateStudyNotes = async (
       config: {
         responseMimeType: "application/json",
         responseSchema: schema,
-        systemInstruction: "You are EduGen, the coolest CBSE teacher. You explain complex topics simply with 'Bhai-style' intros and highly structured notes."
+        systemInstruction: "You are EduGen, a Senior CBSE Expert. Your goal is to provide comprehensive, NCERT-aligned study material that ensures students can answer ANY board exam question. You explain concepts with depth and clarity."
       }
     });
 
@@ -174,80 +192,6 @@ export const generateStudyNotes = async (
     return JSON.parse(text) as StudyNote;
   } catch (error) {
     console.error("Error generating notes:", error);
-    throw error;
-  }
-};
-
-export const generateMindMap = async (
-  topic: string,
-  classLevel: string,
-  subject: string,
-  language: string = 'English'
-): Promise<MindMapData> => {
-  validateKey();
-  
-  const prompt = `
-    Create a highly structured, minimalist Mind Map for:
-    Topic: ${topic}
-    Subject: ${subject}
-    Class: ${classLevel}
-    Language: ${language}
-
-    **Constraints for Single Page Fit:**
-    1. **Root**: The main topic.
-    2. **Branches**: Exactly 4 to 6 main concepts (Level 1). No more, no less.
-    3. **Leaves**: 3 to 4 short keywords/sub-points per branch (Level 2).
-    4. **Brevity**: All titles must be VERY short (1-4 words max).
-    5. **Goal**: Best revision summary in one glance.
-    
-    Return JSON matching the schema.
-  `;
-
-  const schema: Schema = {
-    type: Type.OBJECT,
-    properties: {
-      topic: { type: Type.STRING },
-      subject: { type: Type.STRING },
-      root: { type: Type.STRING, description: "Central Bubble Title" },
-      branches: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            title: { type: Type.STRING, description: "Main Branch Title" },
-            children: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  title: { type: Type.STRING, description: "Keyword or Subpoint" }
-                },
-                required: ["title"]
-              }
-            }
-          },
-          required: ["title", "children"]
-        }
-      }
-    },
-    required: ["topic", "subject", "root", "branches"]
-  };
-
-  try {
-    const response = await ai.models.generateContent({
-      model: MODEL_TEXT,
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: schema
-      }
-    });
-
-    const text = response.text;
-    if (!text) throw new Error("No response from AI");
-    return JSON.parse(text) as MindMapData;
-  } catch (error) {
-    console.error("Error generating mind map:", error);
     throw error;
   }
 };
@@ -441,7 +385,7 @@ export const solveMathProblem = async (
         systemInstruction: prompt,
         responseMimeType: "application/json",
         responseSchema: schema,
-        thinkingConfig: { thinkingBudget: 0 } // Keep 0 for latency, but prompt ensures quality
+        // Removed thinkingConfig as Flash Lite does not support it
       }
     });
 

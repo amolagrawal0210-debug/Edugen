@@ -22,19 +22,6 @@ export interface StudyNote {
   videoSearchTerm: string;
 }
 
-export interface MindMapNode {
-  title: string;
-  color?: string;
-  children: { title: string }[]; // Level 2 nodes (Keywords)
-}
-
-export interface MindMapData {
-  topic: string;
-  subject: string;
-  root: string; // Central Topic
-  branches: MindMapNode[]; // Level 1 Nodes
-}
-
 export enum QuestionType {
   MCQ = 'MCQ',
   COMPETENCY = 'COMPETENCY',
@@ -134,9 +121,9 @@ export interface User {
 export interface SavedItem {
   id: string; // Firestore ID
   userId: string;
-  type: 'note' | 'exam' | 'mindmap';
+  type: 'note' | 'exam';
   title: string;
   subject: string;
   createdAt: number;
-  data: StudyNote | ExamPaper | MindMapData;
+  data: StudyNote | ExamPaper;
 }
