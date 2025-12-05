@@ -156,7 +156,7 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel, user }) => {
   return (
     <div className="space-y-8 animate-fade-in-up">
       <div className="flex justify-center mb-8">
-        <div className="glass-panel p-1 rounded-xl flex gap-1">
+        <div className="glass-panel p-1 rounded-xl flex gap-1 bg-black/40">
           <button 
             onClick={() => setActiveView('create')}
             className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 ${activeView === 'create' ? 'bg-primary text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
@@ -176,16 +176,16 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel, user }) => {
         <>
           <Card className="border-t-4 border-t-accent relative overflow-hidden">
              <div className="absolute top-0 right-0 p-8 opacity-10">
-               <Layers size={120} className="text-accent rotate-12" />
+               <Layers size={150} className="text-accent rotate-12" />
              </div>
-            <h2 className="text-3xl font-black mb-6 flex items-center gap-3 relative z-10">
-              <span className="bg-accent/20 p-2 rounded-lg text-accent-glow"><FileQuestion size={24} /></span>
+            <h2 className="text-3xl font-black mb-8 flex items-center gap-3 relative z-10">
+              <span className="bg-accent/20 p-2.5 rounded-xl text-accent-glow shadow-[0_0_15px_rgba(139,92,246,0.3)]"><FileQuestion size={24} /></span>
               Exam Simulator
             </h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6 relative z-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 relative z-10">
               <div className="space-y-3">
-                <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">Subject Configuration</label>
+                <label className="text-xs text-accent-glow font-bold uppercase tracking-wider">Subject Configuration</label>
                 <div className="grid grid-cols-3 gap-4">
                     <div className="glass-input rounded-xl p-3 flex items-center justify-center text-gray-400 font-bold border border-white/10 opacity-70">
                       Class {classLevel}
@@ -208,7 +208,7 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel, user }) => {
               </div>
 
               <div className="space-y-3">
-                  <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">Pattern Type</label>
+                  <label className="text-xs text-accent-glow font-bold uppercase tracking-wider">Pattern Type</label>
                   <Select value={examType} onChange={(e) => setExamType(e.target.value as ExamType)}>
                     {Object.values(ExamType).map((type) => (
                       <option key={type} value={type}>{type}</option>
@@ -218,7 +218,7 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel, user }) => {
             </div>
 
             <div className="space-y-3 mb-8 relative z-10">
-              <label className="text-xs text-gray-400 font-bold uppercase tracking-wider flex items-center gap-2">
+              <label className="text-xs text-accent-glow font-bold uppercase tracking-wider flex items-center gap-2">
                 <Book size={14} />
                 Target Syllabus
                 {isFullSyllabus && <Badge type="accent">Full Book</Badge>}
@@ -237,13 +237,13 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel, user }) => {
               </datalist>
             </div>
 
-            <div className="flex flex-col items-end gap-4 mt-4 relative z-10">
+            <div className="flex flex-col items-center gap-4 mt-8 relative z-10">
               {!loading ? (
-                <Button onClick={handleCreate} disabled={(!syllabus && !isFullSyllabus)} className="shadow-lg hover:shadow-accent/50">
+                <Button onClick={handleCreate} disabled={(!syllabus && !isFullSyllabus)} className="w-full md:w-1/3 py-4 shadow-[0_0_30px_rgba(16,185,129,0.3)]">
                    <Sparkles size={18} /> Generate Exam Paper
                 </Button>
               ) : (
-                <div className="w-full glass-panel p-6 rounded-xl">
+                <div className="w-full md:w-2/3 glass-panel p-8 rounded-2xl bg-black/40">
                    <ProgressBar step={progressStep} totalSteps={3} message={progressMsg} />
                 </div>
               )}
@@ -252,7 +252,7 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel, user }) => {
 
           {exam && !loading && (
             <div id="exam-paper-container" className="animate-fade-in-up space-y-6">
-              <div className="glass-panel p-6 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-l-4 border-l-accent">
+              <div className="glass-panel p-6 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-l-4 border-l-accent bg-gradient-to-r from-accent/5 to-transparent">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
                     <h2 className="text-2xl font-bold text-white uppercase tracking-wider">{exam.title}</h2>
@@ -270,18 +270,18 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel, user }) => {
                   <Button variant="secondary" onClick={downloadPDF} className="!px-4">
                     <Download size={18} />
                   </Button>
-                  <Button variant="ghost" onClick={() => setShowAnswers(!showAnswers)} className="border border-white/10">
+                  <Button variant="ghost" onClick={() => setShowAnswers(!showAnswers)} className="border border-white/10 hover:bg-white/10">
                     {showAnswers ? 'Hide Key' : 'Show Key'}
                   </Button>
                 </div>
               </div>
 
-              <div className="space-y-5">
+              <div className="space-y-6">
                 {exam.questions.map((q, index) => (
-                  <div key={q.id} className="glass-panel p-6 rounded-xl hover:bg-white/5 transition-colors relative group">
+                  <div key={q.id} className="glass-panel p-8 rounded-2xl hover:bg-white/5 transition-colors relative group glass-card-hover border border-white/5">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-center gap-3">
-                        <span className="bg-white/10 text-white font-mono text-sm px-2.5 py-1 rounded-md border border-white/10">Q{index + 1}</span>
+                        <span className="bg-white/10 text-white font-mono text-sm px-3 py-1.5 rounded-lg border border-white/10 shadow-inner">Q{index + 1}</span>
                         {/* @ts-ignore */}
                         {q.section && <Badge type="neutral">{q.section}</Badge>}
                       </div>
@@ -292,39 +292,39 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel, user }) => {
                     </div>
 
                     {q.figureSVG && (
-                      <div className="mb-6 bg-white rounded-lg p-4 flex justify-center w-fit mx-auto shadow-inner">
+                      <div className="mb-6 bg-white rounded-xl p-4 flex justify-center w-fit mx-auto shadow-xl">
                         <div className="w-full max-w-[300px]" dangerouslySetInnerHTML={{ __html: q.figureSVG }} />
                       </div>
                     )}
                     
                     {!q.figureSVG && q.figureDescription && (
-                      <div className="mb-4 bg-black/30 border border-dashed border-gray-600 p-4 rounded-lg flex gap-3 items-center">
+                      <div className="mb-6 bg-black/30 border border-dashed border-gray-600 p-4 rounded-xl flex gap-3 items-center">
                         <ImageIcon className="text-gray-500" />
                         <span className="text-gray-400 text-sm italic">{q.figureDescription}</span>
                       </div>
                     )}
 
-                    <p className="text-lg text-gray-200 mb-6 font-medium whitespace-pre-line leading-relaxed">{q.questionText}</p>
+                    <p className="text-xl text-gray-200 mb-8 font-medium whitespace-pre-line leading-relaxed">{q.questionText}</p>
 
                     {q.type === QuestionType.MCQ && q.options && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         {q.options.map((opt, i) => (
-                          <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-black/20 border border-white/5 hover:border-accent/30 hover:bg-accent/5 transition-all cursor-pointer">
-                            <span className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-xs text-gray-400 font-mono border border-white/10">
+                          <div key={i} className="flex items-center gap-4 p-4 rounded-xl bg-black/20 border border-white/5 hover:border-accent/50 hover:bg-accent/5 transition-all cursor-pointer">
+                            <span className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-sm text-gray-400 font-mono border border-white/10 shadow-inner">
                               {String.fromCharCode(65 + i)}
                             </span>
-                            <span className="text-gray-300">{opt}</span>
+                            <span className="text-gray-300 font-medium">{opt}</span>
                           </div>
                         ))}
                       </div>
                     )}
 
                     {showAnswers && (
-                      <div className="mt-4 pt-4 border-t border-white/10 animate-in slide-in-from-top-2">
-                        <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-lg">
-                          <p className="text-emerald-400 font-medium flex items-start gap-2">
-                            <CheckCircle size={18} className="mt-0.5 shrink-0" />
-                            <span className="text-gray-200">{q.answerKey}</span>
+                      <div className="mt-6 pt-6 border-t border-white/10 animate-in slide-in-from-top-2">
+                        <div className="bg-emerald-500/10 border border-emerald-500/20 p-5 rounded-xl">
+                          <p className="text-emerald-400 font-bold flex items-start gap-3">
+                            <CheckCircle size={20} className="mt-0.5 shrink-0" />
+                            <span className="text-white text-lg">{q.answerKey}</span>
                           </p>
                         </div>
                       </div>
@@ -350,7 +350,7 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel, user }) => {
            {loadingSaved ? <LoadingSpinner /> : (
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                {filteredExams.length > 0 ? filteredExams.map((item) => (
-                 <div key={item.id} className="glass-panel p-5 rounded-xl flex justify-between items-center hover:bg-white/5 hover:border-accent/30 transition-all cursor-pointer group" onClick={() => handleViewSaved(item)}>
+                 <div key={item.id} className="glass-panel p-6 rounded-2xl flex justify-between items-center hover:bg-white/5 hover:border-accent/50 transition-all cursor-pointer group glass-card-hover" onClick={() => handleViewSaved(item)}>
                     <div className="overflow-hidden">
                       <h3 className="font-bold text-white text-lg truncate group-hover:text-accent-glow transition-colors">{item.title}</h3>
                       <div className="text-sm text-gray-500 flex flex-col gap-0.5 mt-1">
@@ -358,7 +358,7 @@ const ExamGenerator: React.FC<ExamGeneratorProps> = ({ classLevel, user }) => {
                           <span className="text-xs opacity-50">{new Date(item.createdAt).toLocaleDateString()}</span>
                       </div>
                     </div>
-                    <Button variant="ghost" className="h-10 w-10 !p-0 rounded-full flex items-center justify-center shrink-0">
+                    <Button variant="ghost" className="h-10 w-10 !p-0 rounded-full flex items-center justify-center shrink-0 border border-white/5 group-hover:bg-white/10 group-hover:text-white">
                       <ChevronRight size={20} />
                     </Button>
                  </div>

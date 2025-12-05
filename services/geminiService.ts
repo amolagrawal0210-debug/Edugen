@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { StudyNote, ExamPaper, AnalyticsData, QuestionType, Difficulty, ExamType, MathSolution } from "../types";
 
@@ -29,14 +28,24 @@ const apiKey = getApiKey();
 const ai = new GoogleGenAI({ apiKey: apiKey || 'dummy_key_to_init' });
 
 // Constants for Models
-// Switching to Flash Lite as requested for speed/efficiency
-const MODEL_TEXT = 'gemini-2.0-flash-lite-preview-02-05';
+// Upgraded to 2.5 Flash for better JSON consistency and context handling
+const MODEL_TEXT = 'gemini-2.5-flash';
 
 // Helper to validate key before calling
 const validateKey = () => {
   if (!apiKey || apiKey === 'dummy_key_to_init') {
     throw new Error("API Key is missing. Please set VITE_API_KEY in your Vercel Environment Variables.");
   }
+};
+
+// Helper to clean JSON string from Markdown code blocks
+const cleanJSON = (text: string): string => {
+  if (!text) return "{}";
+  // Remove ```json ... ``` or ``` ... ```
+  let cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+  // Trim whitespace
+  cleaned = cleaned.trim();
+  return cleaned;
 };
 
 export const generateStudyNotes = async (
@@ -51,46 +60,24 @@ export const generateStudyNotes = async (
   const effectiveLanguage = subject.toLowerCase() === 'hindi' ? 'Hindi' : language;
 
   const langInstruction = effectiveLanguage === 'Hindi' 
-    ? "**CRITICAL: GENERATE ALL CONTENT IN HINDI LANGUAGE (Devanagari Script).** Use standard NCERT Hindi terminology. You can use English technical terms in brackets like 'कोशिका (Cell)'. The Intro hook should be in natural conversational Hindi." 
+    ? "**CRITICAL: GENERATE ALL CONTENT IN HINDI (Devanagari Script).** Use standard NCERT Hindi terminology." 
     : "Generate content in English.";
 
-  // UPDATED PROMPT: Strict NCERT Alignment & Comprehensive Coverage
   const prompt = `
-    Act as a Senior CBSE Board Examiner and Expert Subject Tutor.
-    Create **COMPREHENSIVE, NCERT-MASTERY STUDY NOTES** for:
-    
-    **Context:**
-    - Class: ${classLevel} (CBSE/NCERT Curriculum)
-    - Subject: ${subject}
-    - Chapter/Topic: ${topic}
+    Act as a Senior CBSE Board Examiner.
+    Create **COMPREHENSIVE NCERT STUDY NOTES** for:
+    Class: ${classLevel}, Subject: ${subject}, Topic: ${topic}
     ${langInstruction}
 
-    **CORE INSTRUCTION:**
-    Your goal is to generate a **complete replacement for the textbook** for revision. 
-    You must cover **100% of the NCERT syllabus** for this chapter. 
-    **DO NOT SKIP** any sub-topic, definition, diagram description, derivation, or important example mentioned in the NCERT book.
+    **STRUCTURE:**
+    1. **Intro**: Engaging hook.
+    2. **Sections**: Break down the topic. Include definitions, laws, formulas.
+    3. **Mnemonics**: 2-3 Memory hacks.
+    4. **Practice**: 3 Important Questions (IST).
+    5. **MCQs**: 3 Board-style MCQs.
+    6. **Summary**: Quick revision table.
 
-    **DETAILED STRUCTURE REQUIREMENTS:**
-    1.  **Intro Hook**: A short, engaging real-world application to spark interest (Gen-Z friendly but professional).
-    2.  **Deep-Dive Sections**: 
-        - Break the chapter down into **ALL** its logical NCERT sub-headings.
-        - For each section, provide **detailed explanations**, not just summaries. 
-        - Include **Laws, Principles, Theorems, and Chemical Equations** explicitly where applicable.
-        - For Math/Physics: Include step-by-step **Derivations** and **Formula Lists**.
-        - For History/Social: Include Dates, Events, Causes, and Consequences.
-    3.  **Comparison Tables**: Mandatorily include tables for confusing terms (e.g., Mitosis vs Meiosis, Concave vs Convex) if applicable.
-    4.  **Mnemonics**: Smart memory hacks to remember lists or sequences.
-    5.  **Exam Corner**:
-        - **IST (It's a Sawal Time)**: 3-4 High-yield Competency/Short Answer questions.
-        - **MCQs**: 3-4 Tricky Board-style MCQs.
-    6.  **Summary Table**: A quick "Cheat Sheet" revision table.
-
-    **QUALITY CHECKS:**
-    - Is the content sufficient for a student to score 100%? Yes.
-    - Are technical terms accurate? Yes.
-    - Is the tone encouraging? Yes.
-
-    **Output**: Return valid JSON only based on the schema.
+    **IMPORTANT:** Return ONLY valid JSON.
   `;
 
   const schema: Schema = {
@@ -99,7 +86,7 @@ export const generateStudyNotes = async (
       topic: { type: Type.STRING },
       classLevel: { type: Type.STRING },
       subject: { type: Type.STRING },
-      intro: { type: Type.STRING, description: "Conversational intro hook." },
+      intro: { type: Type.STRING },
       sections: {
         type: Type.ARRAY,
         items: {
@@ -148,7 +135,6 @@ export const generateStudyNotes = async (
             answer: { type: Type.STRING }
           }
         },
-        description: "IST - It's a Sawal Time"
       },
       mcqs: {
         type: Type.ARRAY,
@@ -183,13 +169,18 @@ export const generateStudyNotes = async (
       config: {
         responseMimeType: "application/json",
         responseSchema: schema,
-        systemInstruction: "You are EduGen, a Senior CBSE Expert. Your goal is to provide comprehensive, NCERT-aligned study material that ensures students can answer ANY board exam question. You explain concepts with depth and clarity."
       }
     });
 
     const text = response.text;
     if (!text) throw new Error("No response from AI");
-    return JSON.parse(text) as StudyNote;
+    
+    try {
+      return JSON.parse(cleanJSON(text)) as StudyNote;
+    } catch (parseError) {
+      console.error("JSON Parse Error. Raw text:", text);
+      throw new Error("Failed to parse AI response. Please try again with a specific sub-topic.");
+    }
   } catch (error) {
     console.error("Error generating notes:", error);
     throw error;
@@ -206,72 +197,20 @@ export const generateExamPaper = async (
   validateKey();
   
   const isMajorExam = examType === ExamType.HALF_YEARLY || examType === ExamType.ANNUAL;
-  const syllabusText = examType === ExamType.ANNUAL ? "Full Syllabus" : syllabus;
   
   // Force Hindi language if the subject itself is Hindi
   const effectiveLanguage = subject.toLowerCase() === 'hindi' ? 'Hindi' : language;
-
   const langInstruction = effectiveLanguage === 'Hindi'
-    ? "**CRITICAL: GENERATE THE ENTIRE EXAM PAPER IN HINDI (Devanagari Script).** All questions, options, and instructions must be in Hindi. Use standard CBSE Hindi terminology."
-    : "Generate the exam paper in English.";
-
-  let structureInstruction = "";
-
-  if (subject.toLowerCase() === 'hindi') {
-    structureInstruction = `
-      Paper Pattern (80 Marks) for Hindi:
-      - Sec A: Reading Skills (Unseen Passages) - MCQs.
-      - Sec B: Grammar (Vyakaran) - MCQs/VSA.
-      - Sec C: Literature (Textbook) - Q&A (SA/LA).
-      - Sec D: Creative Writing (Lekhan) - Long Answer (Essay/Letter).
-      Ensure strict adherence to CBSE Hindi pattern.
-    `;
-  } else if (isMajorExam) {
-    if (subject.toLowerCase() === 'mathematics') {
-      structureInstruction = `
-        Paper Pattern (80 Marks):
-        - Sec A: 18 MCQs + 2 Assert-Reason (1 Mark each).
-        - Sec B: 5 VSA (2 Marks).
-        - Sec C: 6 SA (3 Marks).
-        - Sec D: 4 LA (5 Marks).
-        - Sec E: 3 Case Study (4 Marks).
-        Total 38 Qs.
-      `;
-    } else if (['science', 'physics', 'chemistry', 'biology'].includes(subject.toLowerCase())) {
-      structureInstruction = `
-        Paper Pattern (80 Marks):
-        - Sec A: 20 MCQs (1 Mark).
-        - Sec B: 6 VSA (2 Marks).
-        - Sec C: 7 SA (3 Marks).
-        - Sec D: 3 LA (5 Marks).
-        - Sec E: 3 Case Study (4 Marks).
-      `;
-    } else {
-      structureInstruction = `Follow CBSE 2025 Pattern. Total 80 Marks. Mix of MCQ, SA, LA, Case Study.`;
-    }
-  } else {
-    structureInstruction = `
-      PT Pattern (20 Marks):
-      - 6 MCQs (1M)
-      - 3 VSA (2M)
-      - 1 SA (3M)
-      - 1 LA (5M)
-    `;
-  }
+    ? "GENERATE IN HINDI (Devanagari)."
+    : "Generate in English.";
 
   const prompt = `
-    Generate a CBSE 2025-26 Exam Paper.
+    Generate a CBSE Exam Paper.
     Class: ${classLevel}, Subject: ${subject}, Type: ${examType}
-    Syllabus: ${syllabusText}
+    Syllabus: ${syllabus}
     ${langInstruction}
     
-    ${structureInstruction}
-
-    **SPEED & OPTIMIZATION RULES**:
-    1. **Be Concise**: Question text should be clear but not unnecessarily long.
-    2. **Figures**: Provide 'figureSVG' (valid simple SVG string inside <svg> tag) ONLY for Geometry/Graph/Circuit questions where essential. 
-    3. **Schema**: Adhere strictly to the JSON structure.
-    
+    Ensure questions are high quality and strictly follow CBSE patterns.
     Return JSON.
   `;
 
@@ -316,7 +255,13 @@ export const generateExamPaper = async (
 
     const text = response.text;
     if (!text) throw new Error("No response from AI");
-    return JSON.parse(text) as ExamPaper;
+    
+    try {
+      return JSON.parse(cleanJSON(text)) as ExamPaper;
+    } catch (parseError) {
+       console.error("JSON Parse Error:", parseError);
+       throw new Error("Failed to generate valid exam JSON.");
+    }
   } catch (error) {
     console.error("Error generating exam:", error);
     throw error;
@@ -330,31 +275,15 @@ export const solveMathProblem = async (
 ): Promise<MathSolution> => {
   validateKey();
 
-  // Optimized Prompt for Step-by-Step Clarity (Textbook Style)
   const prompt = `
-    Role: Expert Math Tutor for Class ${classLevel} (CBSE/NCERT).
-    Task: Solve the PRIMARY problem in the image/text showing detailed work.
-    Format: JSON.
-    
-    **CRITICAL CURRICULUM CONSTRAINTS**:
-    - **YOU MUST USE METHODS APPROPRIATE FOR CLASS ${classLevel} ONLY.**
-    - **Class 9**: Use Euclidian Geometry, Surface Areas, Linear Eq in 2 Vars. **ABSOLUTELY NO TRIGONOMETRY OR CALCULUS.**
-    - **Class 10**: Basic Trigonometry allowed. No Calculus.
-    - **Class 11/12**: Calculus, Vectors, etc. allowed.
-    - If the problem looks advanced but is asked for a lower class, find the specific trick or geometric property intended for that level.
-    
-    **GUIDELINES FOR OUTPUT**:
-    1. **Detailed Derivation**: Break the solution into small, logical steps. Avoid combining multiple logical jumps.
-    2. **Equation Centric**: Every step involving a calculation MUST have the 'equation' field populated.
-    3. **Math Formatting**: Use clear plain text math notation (e.g., "x^2 + 2x + 1 = 0", "Area = π * r^2"). 
-    4. **Explanation**: The 'description' should briefly explain the logic (e.g., "Substitute r = 5 into the area formula").
-    5. **Goal**: The output should look like a clean, well-written exam solution.
+    Expert Math Tutor for Class ${classLevel}.
+    Solve the problem. Return detailed steps in JSON.
   `;
 
   const schema: Schema = {
     type: Type.OBJECT,
     properties: {
-      problemStatement: { type: Type.STRING, description: "Restate the problem clearly" },
+      problemStatement: { type: Type.STRING },
       steps: {
         type: Type.ARRAY,
         items: {
@@ -362,7 +291,7 @@ export const solveMathProblem = async (
           properties: {
             stepTitle: { type: Type.STRING },
             description: { type: Type.STRING },
-            equation: { type: Type.STRING, description: "The mathematical expression or formula for this step" }
+            equation: { type: Type.STRING }
           },
           required: ["stepTitle", "description"]
         }
@@ -374,7 +303,7 @@ export const solveMathProblem = async (
     required: ["problemStatement", "steps", "finalAnswer", "keyTips", "commonErrors"]
   };
 
-  const parts: any[] = [{ text: problemText || "Solve the problem in this image." }];
+  const parts: any[] = [{ text: problemText || "Solve this." }];
   
   if (imageBase64) {
     parts.push({
@@ -393,13 +322,17 @@ export const solveMathProblem = async (
         systemInstruction: prompt,
         responseMimeType: "application/json",
         responseSchema: schema,
-        // Removed thinkingConfig as Flash Lite does not support it
       }
     });
 
     const text = response.text;
     if (!text) throw new Error("No response from AI");
-    return JSON.parse(text) as MathSolution;
+    
+    try {
+        return JSON.parse(cleanJSON(text)) as MathSolution;
+    } catch (e) {
+        throw new Error("Failed to parse math solution.");
+    }
   } catch (error) {
     console.error("Error solving math problem:", error);
     throw error;
@@ -411,8 +344,8 @@ export const analyzeStudentPerformance = async (
 ): Promise<AnalyticsData[]> => {
   validateKey();
   const prompt = `
-    Analyze student reflection/quiz: "${studentInput}"
-    Generate Knowledge Heatmap (Subjects, Mastery 0-100, Strong/Weak topics).
+    Analyze student reflection: "${studentInput}"
+    Generate Knowledge Heatmap JSON.
   `;
 
   const schema: Schema = {
@@ -442,7 +375,11 @@ export const analyzeStudentPerformance = async (
 
     const text = response.text;
     if (!text) throw new Error("No response from AI");
-    return JSON.parse(text) as AnalyticsData[];
+    try {
+        return JSON.parse(cleanJSON(text)) as AnalyticsData[];
+    } catch (e) {
+        throw new Error("Analytics parse error.");
+    }
   } catch (error) {
     console.error("Error analyzing performance:", error);
     throw error;

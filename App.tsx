@@ -3,7 +3,7 @@ import NotesGenerator from './components/NotesGenerator';
 import ExamGenerator from './components/ExamGenerator';
 import MathsSolver from './components/MathsSolver';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
-import { BookOpen, FileQuestion, BarChart2, GraduationCap, LayoutDashboard, Menu, X, Calculator, LogIn, LogOut, CloudOff, Settings, Sparkles } from 'lucide-react';
+import { BookOpen, FileQuestion, BarChart2, GraduationCap, LayoutDashboard, Menu, X, Calculator, LogIn, LogOut, CloudOff, Settings, Sparkles, User as UserIcon } from 'lucide-react';
 import { Select, Button, Card, Modal, Input } from './components/UIComponents';
 import { 
   loginWithGoogle, 
@@ -112,7 +112,7 @@ const App: React.FC = () => {
   if (loadingAuth) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center text-white">
-        <div className="w-20 h-20 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+        <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
       </div>
     );
   }
@@ -122,23 +122,23 @@ const App: React.FC = () => {
     return (
       <div className="min-h-screen bg-background text-white flex flex-col items-center justify-center p-4 relative overflow-hidden">
         {/* Animated Background */}
-        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-primary/20 rounded-full blur-[120px] animate-blob mix-blend-screen"></div>
-        <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-accent/20 rounded-full blur-[120px] animate-blob animation-delay-2000 mix-blend-screen"></div>
+        <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-primary/20 rounded-full blur-[120px] animate-blob mix-blend-screen opacity-40"></div>
+        <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-accent/20 rounded-full blur-[120px] animate-blob animation-delay-2000 mix-blend-screen opacity-40"></div>
 
         <div className="relative z-10 max-w-md w-full space-y-8 text-center animate-fade-in-up">
            <div className="flex flex-col items-center gap-6 mb-8">
-             <div className="bg-gradient-to-br from-primary to-primary-dark p-6 rounded-3xl shadow-[0_0_50px_rgba(16,185,129,0.5)] rotate-12 hover:rotate-0 transition-transform duration-500">
-               <GraduationCap size={64} className="text-white drop-shadow-md" />
+             <div className="bg-gradient-to-br from-surface to-black border border-white/10 p-6 rounded-3xl shadow-[0_0_50px_rgba(16,185,129,0.3)] rotate-12 hover:rotate-0 transition-transform duration-500 group">
+               <GraduationCap size={64} className="text-primary-glow drop-shadow-[0_0_15px_rgba(16,185,129,0.6)] group-hover:scale-110 transition-transform" />
              </div>
              <div>
-                <h1 className="text-5xl font-black tracking-tight mb-2">EduGen<span className="text-primary">.ai</span></h1>
-                <p className="text-gray-400 text-lg font-medium">Next-Gen Exam Preparation</p>
+                <h1 className="text-5xl font-black tracking-tighter mb-2 text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-200 to-gray-400">EduGen<span className="text-primary">.ai</span></h1>
+                <p className="text-gray-400 text-lg font-medium tracking-wide">Next-Gen Exam Preparation</p>
              </div>
            </div>
 
-           <Card className="p-8 border-white/10 backdrop-blur-2xl bg-white/5">
+           <Card className="p-8 border-white/10 backdrop-blur-3xl bg-black/40">
              <h2 className="text-2xl font-bold mb-2">Welcome Back</h2>
-             <p className="text-gray-400 mb-8 text-sm">Sign in to access your AI tutor.</p>
+             <p className="text-gray-400 mb-8 text-sm">Sign in to unlock your AI tutor.</p>
              
              <button 
                onClick={handleLogin}
@@ -180,13 +180,13 @@ const App: React.FC = () => {
       
       {/* GLOBAL BACKGROUND ANIMATION */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[100px] animate-blob mix-blend-screen"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-accent/10 rounded-full blur-[100px] animate-blob animation-delay-2000 mix-blend-screen"></div>
-        <div className="absolute top-[40%] left-[40%] w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[100px] animate-blob animation-delay-4000 mix-blend-screen"></div>
+        <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] animate-blob mix-blend-screen"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-accent/10 rounded-full blur-[120px] animate-blob animation-delay-2000 mix-blend-screen"></div>
+        <div className="absolute top-[40%] left-[40%] w-[400px] h-[400px] bg-blue-600/10 rounded-full blur-[100px] animate-blob animation-delay-4000 mix-blend-screen"></div>
       </div>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-72 glass-panel border-r border-white/5 flex-col sticky top-0 h-screen z-20 shadow-2xl">
+      <aside className="hidden md:flex w-72 glass-panel border-r border-white/5 flex-col sticky top-0 h-screen z-20 shadow-2xl backdrop-blur-xl bg-black/20">
         <SidebarContent 
           activeTab={activeTab} 
           onTabChange={handleTabChange} 
@@ -201,9 +201,9 @@ const App: React.FC = () => {
 
       {/* Mobile Header */}
       <div className="md:hidden">
-        <header className="fixed top-0 left-0 right-0 z-30 glass-panel border-b border-white/10 p-4 flex justify-between items-center backdrop-blur-xl">
+        <header className="fixed top-0 left-0 right-0 z-30 glass-panel border-b border-white/10 p-4 flex justify-between items-center backdrop-blur-xl bg-black/60">
           <div className="flex items-center gap-2">
-            <div className="bg-primary p-1.5 rounded-lg shadow-lg shadow-primary/20">
+            <div className="bg-gradient-to-br from-primary to-primary-dark p-1.5 rounded-lg shadow-lg shadow-primary/20">
               <GraduationCap className="text-white" size={20} />
             </div>
             <h1 className="text-xl font-bold tracking-tight text-white">EduGen<span className="text-primary">.ai</span></h1>
@@ -233,18 +233,18 @@ const App: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto h-screen relative z-10 scroll-smooth">
-         <header className="hidden md:flex sticky top-0 z-20 glass-panel border-b border-white/5 p-4 px-8 justify-between items-center backdrop-blur-md">
+         <header className="hidden md:flex sticky top-0 z-20 glass-panel border-b border-white/5 p-4 px-8 justify-between items-center backdrop-blur-lg bg-black/10">
             <div className="flex items-center gap-3">
               <h2 className="text-lg font-bold capitalize text-gray-200 tracking-wide">{activeTab.replace('-', ' ')}</h2>
-              <span className="px-2 py-0.5 rounded-md text-xs bg-primary/10 text-primary border border-primary/20 font-mono">Class {globalClassLevel}</span>
+              <span className="px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary-glow border border-primary/20 font-mono">Class {globalClassLevel}</span>
             </div>
             <div className="flex items-center gap-4">
               <div 
                 className="flex items-center gap-3 cursor-pointer hover:bg-white/5 p-1.5 pr-4 rounded-full transition-all border border-transparent hover:border-white/10 group"
                 onClick={openProfileModal}
               >
-                 <img src={user.photoURL || ''} alt="User" className="w-8 h-8 rounded-full border border-white/20 group-hover:scale-105 transition-transform" />
-                 <span className="text-sm font-semibold group-hover:text-primary transition-colors">{user.displayName}</span>
+                 <img src={user.photoURL || ''} alt="User" className="w-8 h-8 rounded-full border border-white/20 group-hover:border-primary transition-colors" />
+                 <span className="text-sm font-semibold group-hover:text-white transition-colors text-gray-300">{user.displayName}</span>
               </div>
             </div>
          </header>
@@ -310,10 +310,10 @@ interface SidebarProps {
 
 const SidebarContent: React.FC<SidebarProps> = ({ activeTab, onTabChange, classLevel, onClassChange, user, onLogout, isLocalMode, onEditProfile }) => (
   <>
-    <div className="p-6 border-b border-white/5 hidden md:block relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-50"></div>
+    <div className="p-6 border-b border-white/5 hidden md:block relative overflow-hidden group cursor-pointer" onClick={() => onTabChange('dashboard')}>
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
       <div className="flex items-center gap-3 mb-2 relative z-10">
-        <div className="bg-primary p-2 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.4)]">
+        <div className="bg-gradient-to-br from-primary to-primary-dark p-2 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.4)]">
           <GraduationCap className="text-white" size={24} />
         </div>
         <h1 className="text-2xl font-black tracking-tight text-white">EduGen<span className="text-primary">.ai</span></h1>
@@ -322,14 +322,14 @@ const SidebarContent: React.FC<SidebarProps> = ({ activeTab, onTabChange, classL
     
     <div className="p-4 md:p-6 flex-1 flex flex-col justify-between overflow-y-auto">
       <div>
-        <div className="bg-white/5 p-4 rounded-xl border border-white/5 mb-8">
-          <label className="text-[10px] text-primary font-bold uppercase tracking-widest mb-2 block flex items-center gap-1">
+        <div className="bg-white/5 p-4 rounded-xl border border-white/5 mb-8 shadow-inner">
+          <label className="text-[10px] text-primary-glow font-bold uppercase tracking-widest mb-2 block flex items-center gap-1">
             <Sparkles size={10} /> Student Class
           </label>
           <Select 
             value={classLevel} 
             onChange={(e) => onClassChange(e.target.value)}
-            className="py-2 text-sm bg-black/50 border-white/10 focus:border-primary"
+            className="py-2 text-sm bg-black/40 border-white/10 focus:border-primary"
           >
             <option value="9">Class 9</option>
             <option value="10">Class 10</option>
@@ -382,16 +382,16 @@ const SidebarContent: React.FC<SidebarProps> = ({ activeTab, onTabChange, classL
        </div>
     </div>
 
-    <div className="p-4 border-t border-white/5 bg-black/20 backdrop-blur-sm">
+    <div className="p-4 border-t border-white/5 bg-black/30 backdrop-blur-md">
       <div className="flex items-center justify-between">
         <div 
           className="flex items-center gap-3 overflow-hidden cursor-pointer hover:bg-white/5 p-2 -ml-2 rounded-lg transition-colors flex-1 mr-2 group"
           onClick={onEditProfile}
         >
-          <img src={user.photoURL || ''} className="w-9 h-9 rounded-full border border-white/10 group-hover:border-primary transition-colors" />
+          <img src={user.photoURL || ''} className="w-9 h-9 rounded-full border border-white/10 group-hover:border-primary transition-colors object-cover" />
           <div className="text-xs truncate">
-            <p className="text-white font-bold truncate">{user.displayName}</p>
-            <p className="text-gray-500 truncate text-[10px] uppercase tracking-wider">Student</p>
+            <p className="text-white font-bold truncate group-hover:text-primary-glow transition-colors">{user.displayName}</p>
+            <p className="text-gray-500 truncate text-[10px] uppercase tracking-wider">Student Plan</p>
           </div>
         </div>
         <button onClick={onLogout} className="text-gray-500 hover:text-red-400 hover:bg-red-500/10 p-2 rounded-lg transition-all" title="Sign Out">
@@ -407,12 +407,14 @@ const NavButton: React.FC<{ active: boolean; onClick: () => void; icon: React.Re
     onClick={onClick}
     className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-300 group relative overflow-hidden ${
       active 
-        ? 'text-white shadow-lg' 
+        ? 'text-white shadow-lg bg-white/5 border border-white/5' 
         : 'text-gray-400 hover:text-white hover:bg-white/5'
     }`}
   >
-    {active && <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-transparent border-l-2 border-primary opacity-100"></div>}
-    <span className={`relative z-10 transition-colors duration-300 ${active ? 'text-primary' : 'group-hover:text-primary-glow'}`}>
+    {active && <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary shadow-[0_0_10px_#10b981]"></div>}
+    {active && <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-50"></div>}
+    
+    <span className={`relative z-10 transition-colors duration-300 ${active ? 'text-primary-glow' : 'group-hover:text-primary-glow'}`}>
       {icon}
     </span>
     <span className="relative z-10 font-medium tracking-wide">{label}</span>
@@ -422,38 +424,41 @@ const NavButton: React.FC<{ active: boolean; onClick: () => void; icon: React.Re
 const DashboardHome: React.FC<{ onChangeTab: (tab: any) => void, userName: string }> = ({ onChangeTab, userName }) => (
   <div className="max-w-6xl mx-auto space-y-12 animate-fade-in-up pb-10">
     <div className="text-center space-y-6 py-12 relative">
+      {/* Hero Glow */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-primary/20 blur-[100px] rounded-full pointer-events-none"></div>
+      
       <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter relative z-10">
-        Hello, <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-glow to-primary-dark">{userName}.</span>
+        Hello, <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-glow via-primary to-accent-glow">{userName}.</span>
       </h1>
       <p className="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto font-light relative z-10">
-        Your personal AI tutor is ready. What shall we conquer today?
+        Your personal AI tutor is online. What shall we conquer today?
       </p>
       
-      <div className="flex justify-center pt-4 relative z-10">
+      <div className="flex justify-center pt-8 relative z-10">
         <button 
           onClick={() => onChangeTab('notes')} 
-          className="bg-white text-black px-10 py-4 rounded-full font-bold text-lg hover:scale-110 transition-transform duration-300 shadow-[0_0_40px_rgba(255,255,255,0.3)] flex items-center gap-2"
+          className="bg-white text-black px-12 py-4 rounded-full font-bold text-lg hover:scale-105 transition-all duration-300 shadow-[0_0_50px_rgba(255,255,255,0.4)] flex items-center gap-3 group"
         >
-          <Sparkles size={20} className="text-primary-dark" /> Start Learning
+          <Sparkles size={22} className="text-primary-dark group-hover:rotate-12 transition-transform" /> 
+          Start Learning
         </button>
       </div>
     </div>
 
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <FeatureCard 
-        icon={<BookOpen className="text-primary" size={32} />}
+        icon={<BookOpen className="text-primary-glow" size={32} />}
         title="Smart Notes"
         desc="Deep-dive into concepts with AI-generated, NCERT-aligned summaries."
         onClick={() => onChangeTab('notes')}
-        color="emerald"
+        color="primary"
       />
       <FeatureCard 
         icon={<FileQuestion className="text-accent-glow" size={32} />}
         title="Exam Simulator"
         desc="Practice with generated papers tailored to your syllabus."
         onClick={() => onChangeTab('exam')}
-        color="violet"
+        color="accent"
       />
       <FeatureCard 
         icon={<Calculator className="text-blue-400" size={32} />}
@@ -476,14 +481,16 @@ const DashboardHome: React.FC<{ onChangeTab: (tab: any) => void, userName: strin
 const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; desc: string; onClick: () => void; color: string }> = ({ icon, title, desc, onClick, color }) => (
   <div 
     onClick={onClick} 
-    className="glass-panel p-6 rounded-2xl cursor-pointer hover:border-white/20 transition-all group hover:-translate-y-2 hover:shadow-[0_10px_40px_rgba(0,0,0,0.5)] relative overflow-hidden"
+    className="glass-panel p-6 rounded-2xl cursor-pointer hover:border-white/20 transition-all group hover:-translate-y-2 hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] relative overflow-hidden glass-card-hover"
   >
-    <div className={`absolute inset-0 bg-${color}-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
+    {/* Hover Gradient Background */}
+    <div className={`absolute inset-0 bg-gradient-to-br from-${color === 'primary' ? 'emerald' : color === 'accent' ? 'violet' : color}-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
+    
     <div className="mb-4 bg-white/5 w-16 h-16 rounded-2xl flex items-center justify-center border border-white/10 group-hover:scale-110 transition-transform duration-300 shadow-inner">
       {icon}
     </div>
-    <h3 className="text-2xl font-bold text-white mb-2 tracking-tight group-hover:text-primary-glow transition-colors">{title}</h3>
-    <p className="text-gray-400 leading-relaxed text-sm group-hover:text-gray-300">{desc}</p>
+    <h3 className="text-2xl font-bold text-white mb-2 tracking-tight group-hover:text-white transition-colors relative z-10">{title}</h3>
+    <p className="text-gray-400 leading-relaxed text-sm group-hover:text-gray-300 relative z-10">{desc}</p>
   </div>
 );
 

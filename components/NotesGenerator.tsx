@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { generateStudyNotes } from '../services/geminiService';
 import { StudyNote, SavedItem, User } from '../types';
 import { Button, Card, Input, Select, LoadingSpinner, Badge, ProgressBar } from './UIComponents';
-import { BookOpen, Printer, Lightbulb, Save, History, ChevronRight, Search, FileText, Sparkles, Zap, BrainCircuit } from 'lucide-react';
+import { BookOpen, Printer, Lightbulb, Save, History, ChevronRight, Search, FileText, Sparkles, Zap, BrainCircuit, List } from 'lucide-react';
 import { jsPDF } from "jspdf";
 import html2canvas from 'html2canvas';
 import { saveGeneratedItem, getSavedItems } from '../services/firebaseService';
@@ -153,7 +153,7 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel, user }) => 
     <div className="space-y-8 animate-fade-in-up">
       {/* Top Tabs */}
       <div className="flex justify-center mb-8">
-        <div className="glass-panel p-1 rounded-xl flex gap-1">
+        <div className="glass-panel p-1 rounded-xl flex gap-1 bg-black/40">
           <button 
             onClick={() => setActiveView('create')}
             className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 ${activeView === 'create' ? 'bg-primary text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
@@ -171,19 +171,19 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel, user }) => 
 
       {activeView === 'create' ? (
         <>
-          <Card className="relative overflow-hidden">
+          <Card className="relative overflow-hidden border-t-4 border-t-primary">
             <div className="absolute top-0 right-0 p-8 opacity-10">
-              <BrainCircuit size={120} className="text-primary rotate-12" />
+              <BrainCircuit size={150} className="text-primary rotate-12" />
             </div>
-            <h2 className="text-3xl font-black mb-6 flex items-center gap-3 relative z-10">
-              <span className="bg-primary/20 p-2 rounded-lg text-primary"><BookOpen size={24} /></span>
+            <h2 className="text-3xl font-black mb-8 flex items-center gap-3 relative z-10">
+              <span className="bg-primary/20 p-2.5 rounded-xl text-primary shadow-[0_0_15px_rgba(16,185,129,0.3)]"><BookOpen size={24} /></span>
               Concept Engine
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-5 gap-6 relative z-10">
               <div className="md:col-span-1 glass-input rounded-xl p-3 flex flex-col items-center justify-center text-gray-400 font-bold border border-white/10">
-                <span className="text-xs uppercase tracking-widest mb-1">Class Level</span>
-                <span className="text-xl text-white">{classLevel}</span>
+                <span className="text-xs uppercase tracking-widest mb-1 text-primary-glow">Class Level</span>
+                <span className="text-2xl text-white tracking-tighter">{classLevel}</span>
               </div>
               <Select value={language} onChange={(e) => setLanguage(e.target.value)} className="md:col-span-1">
                 <option value="English">English</option>
@@ -213,13 +213,13 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel, user }) => 
                 </datalist>
               </div>
 
-              <div className="md:col-span-5 flex flex-col items-center gap-4 mt-4">
+              <div className="md:col-span-5 flex flex-col items-center gap-4 mt-6">
                 {!loading ? (
-                    <Button onClick={handleGenerate} disabled={!topic} className="w-full md:w-1/3 py-4 text-lg shadow-xl">
+                    <Button onClick={handleGenerate} disabled={!topic} className="w-full md:w-1/3 py-4 text-lg shadow-[0_0_30px_rgba(16,185,129,0.3)]">
                       <Sparkles size={20} /> Generate Notes
                     </Button>
                 ) : (
-                    <div className="w-full md:w-2/3 glass-panel p-6 rounded-xl">
+                    <div className="w-full md:w-2/3 glass-panel p-8 rounded-2xl bg-black/40">
                        <ProgressBar step={progressStep} totalSteps={3} message={progressMsg} />
                     </div>
                 )}
@@ -229,11 +229,11 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel, user }) => 
 
           {/* Render STUDY NOTES */}
           {note && !loading && (
-            <div id="note-content-container" className="animate-fade-in-up space-y-6">
-               <div className="flex justify-between items-center mb-6 flex-wrap gap-4 glass-panel p-6 rounded-2xl border-l-4 border-l-primary">
+            <div id="note-content-container" className="animate-fade-in-up space-y-8">
+               <div className="flex justify-between items-center mb-6 flex-wrap gap-4 glass-panel p-8 rounded-3xl border-l-4 border-l-primary bg-gradient-to-r from-primary/5 to-transparent">
                   <div>
                     <Badge type="accent">{note.subject}</Badge>
-                    <h1 className="text-4xl font-black text-white mt-2 tracking-tight">{note.topic}</h1>
+                    <h1 className="text-4xl md:text-5xl font-black text-white mt-3 tracking-tighter">{note.topic}</h1>
                   </div>
                   <div className="flex gap-3">
                     <Button variant="outline" className="!px-4" onClick={handleSave} disabled={saving}>
@@ -245,14 +245,14 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel, user }) => 
                   </div>
                </div>
                
-               <Card className="bg-gradient-to-r from-primary-20 to-transparent border-primary/20">
-                 <div className="flex gap-5 items-start">
-                   <div className="bg-primary/20 p-3 rounded-full shrink-0">
-                     <Lightbulb className="text-primary-glow" size={28} />
+               <Card className="bg-gradient-to-br from-primary-20 to-transparent border-primary/20">
+                 <div className="flex gap-6 items-start">
+                   <div className="bg-primary/20 p-4 rounded-2xl shrink-0 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+                     <Lightbulb className="text-primary-glow" size={32} />
                    </div>
                    <div>
-                     <h3 className="text-lg font-bold text-white mb-2">The Hook</h3>
-                     <p className="text-gray-200 italic leading-relaxed text-lg">"{note.intro}"</p>
+                     <h3 className="text-lg font-bold text-white mb-2 uppercase tracking-wide">The Hook</h3>
+                     <p className="text-gray-200 italic leading-relaxed text-lg font-medium">"{note.intro}"</p>
                    </div>
                  </div>
                </Card>
@@ -260,24 +260,24 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel, user }) => 
                <div className="grid gap-8">
                  {note.sections.map((section, idx) => (
                    <Card key={idx} className="relative overflow-hidden group hover:border-white/20 transition-all">
-                     <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-all"></div>
+                     <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-primary/10 transition-all"></div>
                      
-                     <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3 border-b border-white/10 pb-4">
-                       <span className="bg-white/10 text-primary-glow w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg shadow-inner">{idx + 1}</span>
+                     <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-4 border-b border-white/5 pb-4">
+                       <span className="bg-gradient-to-br from-white/10 to-transparent text-primary-glow w-12 h-12 rounded-xl flex items-center justify-center font-black text-xl shadow-inner border border-white/5">{idx + 1}</span>
                        {section.title}
                      </h3>
                      
-                     <ul className="space-y-4 mb-6 ml-2">
+                     <ul className="space-y-4 mb-8 ml-2">
                        {section.content.map((point, pIdx) => (
-                         <li key={pIdx} className="flex gap-4 text-gray-300">
-                           <span className="text-primary mt-1.5"><Zap size={14} fill="currentColor" /></span>
-                           <span className="leading-relaxed">{point}</span>
+                         <li key={pIdx} className="flex gap-4 text-gray-300 group/item hover:text-white transition-colors">
+                           <span className="text-primary mt-1.5 opacity-50 group-hover/item:opacity-100 transition-opacity"><Zap size={16} fill="currentColor" /></span>
+                           <span className="leading-relaxed text-lg">{point}</span>
                          </li>
                        ))}
                      </ul>
                      
                      {section.table && (
-                        <div className="overflow-x-auto mb-4 border border-white/10 rounded-xl bg-black/20">
+                        <div className="overflow-x-auto mb-4 border border-white/10 rounded-xl bg-black/30 shadow-inner">
                           <table className="w-full text-left text-sm">
                             <thead className="bg-white/5 text-primary-glow uppercase font-bold text-xs tracking-wider">
                               <tr>{section.table.headers.map((h, i) => <th key={i} className="px-6 py-4">{h}</th>)}</tr>
@@ -297,14 +297,14 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel, user }) => 
                </div>
                
                {note.mnemonics.length > 0 && (
-                 <div className="grid md:grid-cols-2 gap-4">
+                 <div className="grid md:grid-cols-2 gap-6">
                      {note.mnemonics.map((m, i) => (
-                       <div key={i} className="glass-panel p-5 rounded-xl border border-yellow-500/20 bg-yellow-500/5 relative overflow-hidden">
-                         <div className="flex justify-between items-start mb-2">
+                       <div key={i} className="glass-panel p-6 rounded-2xl border-l-4 border-l-yellow-500 bg-gradient-to-br from-yellow-500/10 to-transparent relative overflow-hidden hover:translate-y-[-2px] transition-transform">
+                         <div className="flex justify-between items-start mb-3">
                             <span className="text-yellow-400 font-black text-xl tracking-wide">{m.name}</span>
                             <Badge type="warning">Memory Hack</Badge>
                          </div>
-                         <p className="text-gray-400 text-sm">{m.description}</p>
+                         <p className="text-gray-300">{m.description}</p>
                        </div>
                      ))}
                  </div>
@@ -329,19 +329,19 @@ const NotesGenerator: React.FC<NotesGeneratorProps> = ({ classLevel, user }) => 
                {filteredItems.length > 0 ? filteredItems.map((item) => {
                  const noteData = item.data as StudyNote;
                  return (
-                 <div key={item.id} className="glass-panel p-5 rounded-xl flex justify-between items-center hover:bg-white/5 hover:border-primary/30 transition-all cursor-pointer group" onClick={() => handleViewSaved(item)}>
+                 <div key={item.id} className="glass-panel p-6 rounded-2xl flex justify-between items-center hover:bg-white/5 hover:border-primary/50 transition-all cursor-pointer group glass-card-hover" onClick={() => handleViewSaved(item)}>
                     <div className="overflow-hidden">
                       <div className="flex items-center gap-2 mb-2">
-                         <FileText size={14} className="text-blue-400"/>
+                         <FileText size={14} className="text-primary"/>
                          <Badge type="neutral" >NOTES</Badge>
                       </div>
-                      <h3 className="font-bold text-white text-lg truncate group-hover:text-primary transition-colors">{item.title}</h3>
+                      <h3 className="font-bold text-white text-lg truncate group-hover:text-primary-glow transition-colors">{item.title}</h3>
                       <div className="text-sm text-gray-500 flex flex-col gap-0.5 mt-1">
                           <span className="font-semibold text-gray-400">{item.subject} • Class {noteData.classLevel}</span>
                           <span className="text-xs opacity-50">{new Date(item.createdAt).toLocaleDateString()}</span>
                       </div>
                     </div>
-                    <Button variant="ghost" className="h-10 w-10 !p-0 rounded-full flex items-center justify-center shrink-0">
+                    <Button variant="ghost" className="h-10 w-10 !p-0 rounded-full flex items-center justify-center shrink-0 border border-white/5 group-hover:bg-white/10 group-hover:text-white">
                       <ChevronRight size={20} />
                     </Button>
                  </div>

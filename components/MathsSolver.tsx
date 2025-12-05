@@ -127,25 +127,25 @@ const MathsSolver: React.FC<MathsSolverProps> = ({ classLevel }) => {
     <div className="space-y-8 max-w-4xl mx-auto animate-fade-in-up">
       <Card className="relative overflow-hidden border-t-4 border-t-blue-500">
         <div className="absolute top-0 right-0 p-8 opacity-10">
-           <Calculator size={120} className="text-blue-500 rotate-12" />
+           <Calculator size={150} className="text-blue-500 rotate-12" />
         </div>
         
         <h2 className="text-3xl font-black mb-8 flex items-center gap-3 relative z-10">
-          <span className="bg-blue-500/20 p-2 rounded-lg text-blue-400"><Calculator size={24} /></span>
+          <span className="bg-blue-500/20 p-2.5 rounded-xl text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.3)]"><Calculator size={24} /></span>
           AI Solver
         </h2>
         
         <div className="space-y-6 relative z-10">
           <div className="glass-input p-1 rounded-2xl border border-white/10 shadow-inner">
             <textarea
-              className="w-full bg-transparent border-none text-white placeholder-gray-500 focus:ring-0 resize-none h-32 text-lg p-4 font-medium"
+              className="w-full bg-transparent border-none text-white placeholder-gray-500 focus:ring-0 resize-none h-40 text-lg p-5 font-medium"
               placeholder="Type your math problem here (e.g., Integrate x^2 sin(x) dx)..."
               value={problemText}
               onChange={(e) => setProblemText(e.target.value)}
             />
             
-            <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl mt-1">
-               <div className="flex items-center gap-2">
+            <div className="flex justify-between items-center p-4 bg-white/5 rounded-xl mt-1">
+               <div className="flex items-center gap-3">
                   <input 
                     type="file" 
                     ref={fileInputRef}
@@ -155,13 +155,13 @@ const MathsSolver: React.FC<MathsSolverProps> = ({ classLevel }) => {
                   />
                   <button 
                     onClick={() => fileInputRef.current?.click()}
-                    className="text-white bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-all border border-white/10"
+                    className="text-white bg-white/10 hover:bg-white/20 px-5 py-2.5 rounded-lg flex items-center gap-2 text-sm transition-all border border-white/10 font-semibold"
                   >
-                    <Camera size={16} /> Snap Photo
+                    <Camera size={18} /> Snap Photo
                   </button>
                   
                   {image && (
-                    <div className="flex items-center gap-2 bg-blue-500/20 px-3 py-1.5 rounded-full border border-blue-500/30 ml-2 animate-fade-in-up">
+                    <div className="flex items-center gap-2 bg-blue-500/20 px-4 py-2 rounded-full border border-blue-500/30 ml-2 animate-fade-in-up">
                       <ImageIcon size={14} className="text-blue-400" />
                       <span className="text-xs text-blue-200 font-bold">Image Ready</span>
                       <button onClick={clearImage} className="text-blue-300 hover:text-white">
@@ -171,7 +171,7 @@ const MathsSolver: React.FC<MathsSolverProps> = ({ classLevel }) => {
                   )}
                </div>
                
-               <Button onClick={() => handleSolve()} disabled={loading || (!problemText && !image)} className="px-8 shadow-lg hover:shadow-blue-500/20">
+               <Button onClick={() => handleSolve()} disabled={loading || (!problemText && !image)} className="px-10 shadow-lg hover:shadow-blue-500/20">
                  {loading ? 'Thinking...' : 'Solve'}
                </Button>
             </div>
@@ -181,7 +181,7 @@ const MathsSolver: React.FC<MathsSolverProps> = ({ classLevel }) => {
 
       {/* Cropper Modal */}
       {showCropper && tempImage && (
-        <div className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-4 animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in duration-300">
           <div className="w-full max-w-lg mb-4 flex justify-between items-center text-white">
              <div>
                 <h3 className="font-bold text-lg flex items-center gap-2 text-primary"><Crop size={20}/> Crop Problem</h3>
@@ -211,7 +211,7 @@ const MathsSolver: React.FC<MathsSolverProps> = ({ classLevel }) => {
                    }, 50);
                }}
              />
-             <div className="absolute inset-0 bg-black/60 pointer-events-none" 
+             <div className="absolute inset-0 bg-black/70 pointer-events-none" 
                   style={{
                     clipPath: cropRect && cropRect.w > 0 
                       ? `polygon(0% 0%, 0% 100%, ${cropRect.x}px 100%, ${cropRect.x}px ${cropRect.y}px, ${cropRect.x + cropRect.w}px ${cropRect.y}px, ${cropRect.x + cropRect.w}px ${cropRect.y + cropRect.h}px, ${cropRect.x}px ${cropRect.y + cropRect.h}px, ${cropRect.x}px 100%, 100% 100%, 100% 0%)`
@@ -226,7 +226,7 @@ const MathsSolver: React.FC<MathsSolverProps> = ({ classLevel }) => {
              )}
           </div>
           
-          <div className="mt-6 flex gap-4 w-full max-w-lg">
+          <div className="mt-8 flex gap-4 w-full max-w-lg">
              <Button variant="secondary" className="flex-1" onClick={() => setShowCropper(false)}>Cancel</Button>
              <Button className="flex-[2]" onClick={performCropAndSolve}>Analyze</Button>
           </div>
@@ -234,37 +234,38 @@ const MathsSolver: React.FC<MathsSolverProps> = ({ classLevel }) => {
       )}
 
       {loading && !showCropper && (
-         <div className="flex flex-col items-center justify-center p-12 glass-panel rounded-2xl">
-            <div className="relative">
-               <div className="absolute inset-0 bg-blue-500 blur-2xl opacity-20 animate-pulse"></div>
-               <ScanLine size={56} className="text-blue-400 relative z-10 animate-bounce" />
+         <div className="flex flex-col items-center justify-center p-16 glass-panel rounded-2xl bg-black/40">
+            <div className="relative mb-8">
+               <div className="absolute inset-0 bg-blue-500 blur-3xl opacity-30 animate-pulse"></div>
+               <ScanLine size={64} className="text-blue-400 relative z-10 animate-bounce" />
             </div>
-            <h3 className="text-white font-bold mt-8 text-xl tracking-tight">Deconstructing...</h3>
+            <h3 className="text-white font-bold text-2xl tracking-tight">Deconstructing...</h3>
+            <p className="text-gray-400 mt-2">Identifying mathematical patterns</p>
          </div>
       )}
 
       {solution && !loading && (
-        <div className="animate-fade-in-up space-y-4">
-          <Accordion title="Final Answer" defaultOpen={true} icon={<CheckCircle size={18} />}>
-            <div className="text-center py-6">
-               <div className="inline-block bg-gradient-to-br from-green-500/20 to-emerald-600/10 text-emerald-400 text-3xl font-black px-10 py-6 rounded-2xl border border-emerald-500/30 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+        <div className="animate-fade-in-up space-y-6">
+          <Accordion title="Final Answer" defaultOpen={true} icon={<CheckCircle size={20} />}>
+            <div className="text-center py-8">
+               <div className="inline-block bg-gradient-to-br from-emerald-500/20 to-emerald-900/10 text-emerald-400 text-4xl font-black px-12 py-8 rounded-3xl border border-emerald-500/30 shadow-[0_0_40px_rgba(16,185,129,0.1)]">
                   {solution.finalAnswer}
                </div>
-               <p className="text-gray-400 mt-4 text-sm font-medium">{solution.problemStatement}</p>
+               <p className="text-gray-400 mt-6 text-lg font-medium">{solution.problemStatement}</p>
             </div>
           </Accordion>
 
-          <Accordion title="Step-by-Step Method" defaultOpen={true} icon={<ListOrdered size={18} />}>
-            <div className="space-y-8 px-4 py-2">
+          <Accordion title="Step-by-Step Method" defaultOpen={true} icon={<ListOrdered size={20} />}>
+            <div className="space-y-10 px-4 py-4">
                 {solution.steps.map((step, idx) => (
-                  <div key={idx} className="relative pl-8 border-l-2 border-white/10 pb-2 group">
-                      <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-surface border-2 border-blue-500 group-hover:scale-125 transition-transform"></div>
+                  <div key={idx} className="relative pl-10 border-l-2 border-white/10 pb-2 group">
+                      <div className="absolute -left-[11px] top-0 w-5 h-5 rounded-full bg-surface border-4 border-blue-500 group-hover:scale-125 transition-transform shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
                       
-                      <h4 className="font-bold text-white text-lg mb-2 leading-none">{step.stepTitle}</h4>
-                      <p className="text-gray-400 mb-4 text-sm leading-relaxed">{step.description}</p>
+                      <h4 className="font-bold text-white text-xl mb-3 leading-none tracking-tight">{step.stepTitle}</h4>
+                      <p className="text-gray-300 mb-5 text-base leading-relaxed">{step.description}</p>
                       
                       {step.equation && (
-                        <div className="glass-panel p-4 rounded-xl border border-white/10 font-mono text-lg text-center text-blue-300 overflow-x-auto shadow-inner bg-black/30">
+                        <div className="glass-panel p-6 rounded-2xl border border-white/10 font-mono text-xl text-center text-blue-300 overflow-x-auto shadow-inner bg-black/30">
                           {step.equation}
                         </div>
                       )}
@@ -273,23 +274,23 @@ const MathsSolver: React.FC<MathsSolverProps> = ({ classLevel }) => {
             </div>
           </Accordion>
 
-          <Accordion title="AI Insight & Tips" defaultOpen={false} icon={<Sparkles size={18} />}>
+          <Accordion title="AI Insight & Tips" defaultOpen={false} icon={<Sparkles size={20} />}>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="glass-panel p-4 rounded-xl border-l-2 border-l-yellow-500 bg-yellow-500/5">
-                  <h4 className="text-yellow-400 font-bold mb-3 flex items-center gap-2"><Lightbulb size={16}/> Key Concepts</h4>
+                <div className="glass-panel p-6 rounded-2xl border-l-4 border-l-yellow-500 bg-gradient-to-br from-yellow-500/10 to-transparent">
+                  <h4 className="text-yellow-400 font-bold mb-4 flex items-center gap-2 text-lg"><Lightbulb size={20}/> Key Concepts</h4>
                   <ul className="space-y-3">
                     {solution.keyTips.map((tip, i) => (
-                      <li key={i} className="flex gap-2 text-gray-300 text-sm">
+                      <li key={i} className="flex gap-3 text-gray-300 text-sm">
                         <span className="text-yellow-500 mt-1">•</span> {tip}
                       </li>
                     ))}
                   </ul>
                 </div>
-                <div className="glass-panel p-4 rounded-xl border-l-2 border-l-rose-500 bg-rose-500/5">
-                  <h4 className="text-rose-400 font-bold mb-3 flex items-center gap-2"><AlertTriangle size={16}/> Common Mistakes</h4>
+                <div className="glass-panel p-6 rounded-2xl border-l-4 border-l-rose-500 bg-gradient-to-br from-rose-500/10 to-transparent">
+                  <h4 className="text-rose-400 font-bold mb-4 flex items-center gap-2 text-lg"><AlertTriangle size={20}/> Common Mistakes</h4>
                   <ul className="space-y-3">
                     {solution.commonErrors.map((err, i) => (
-                      <li key={i} className="flex gap-2 text-gray-300 text-sm">
+                      <li key={i} className="flex gap-3 text-gray-300 text-sm">
                         <span className="text-rose-500 mt-1">•</span> {err}
                       </li>
                     ))}

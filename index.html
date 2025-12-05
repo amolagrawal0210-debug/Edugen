@@ -30,10 +30,10 @@
         theme: {
           extend: {
             colors: {
-              background: '#050505', // Almost black
-              surface: '#0f0f11', // Dark grey
+              background: '#020617', // Slate 950 base
+              surface: '#0f172a', // Slate 900
               
-              // New Vibrant Brand Colors
+              // Vibrant Neon Brand Colors
               primary: {
                 DEFAULT: '#10b981', // Emerald 500
                 glow: '#34d399', // Emerald 400
@@ -43,23 +43,26 @@
               accent: {
                 DEFAULT: '#8b5cf6', // Violet 500
                 glow: '#a78bfa',
+                dark: '#7c3aed',
               },
               
-              // Glass Colors
+              // Glass System
               glass: {
                 border: 'rgba(255, 255, 255, 0.08)',
-                surface: 'rgba(20, 20, 23, 0.6)', 
+                surface: 'rgba(15, 23, 42, 0.6)', 
                 highlight: 'rgba(255, 255, 255, 0.05)',
               }
             },
             fontFamily: {
               sans: ['Inter', 'sans-serif'],
+              mono: ['Fira Code', 'monospace'],
             },
             animation: {
-              'blob': 'blob 10s infinite',
-              'fade-in-up': 'fadeInUp 0.5s ease-out forwards',
+              'blob': 'blob 20s infinite',
+              'fade-in-up': 'fadeInUp 0.6s ease-out forwards',
               'pulse-glow': 'pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
               'float': 'float 6s ease-in-out infinite',
+              'shimmer': 'shimmer 2s linear infinite',
             },
             keyframes: {
               blob: {
@@ -79,6 +82,10 @@
               float: {
                 '0%, 100%': { transform: 'translateY(0)' },
                 '50%': { transform: 'translateY(-10px)' },
+              },
+              shimmer: {
+                '0%': { backgroundPosition: '-1000px 0' },
+                '100%': { backgroundPosition: '1000px 0' }
               }
             }
           },
@@ -86,48 +93,59 @@
       }
     </script>
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;600&display=swap');
       
       body {
-        background-color: #050505;
-        color: #fafafa;
+        background-color: #020617;
+        color: #f8fafc;
         overflow-x: hidden;
       }
 
-      /* Glassmorphism Classes */
+      /* Advanced Glassmorphism */
       .glass-panel {
-        background: rgba(20, 20, 23, 0.4);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
       }
       
+      .glass-card-hover {
+        transition: all 0.3s ease;
+      }
+      .glass-card-hover:hover {
+        background: rgba(30, 41, 59, 0.7);
+        border-color: rgba(255, 255, 255, 0.15);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
+      }
+
       .glass-input {
-        background: rgba(0, 0, 0, 0.3);
+        background: rgba(2, 6, 23, 0.5);
         border: 1px solid rgba(255, 255, 255, 0.1);
         backdrop-filter: blur(4px);
         transition: all 0.3s ease;
       }
       .glass-input:focus {
         border-color: #10b981;
-        box-shadow: 0 0 0 1px #10b981;
-        background: rgba(0, 0, 0, 0.5);
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+        background: rgba(2, 6, 23, 0.8);
       }
 
       /* Custom Scrollbar */
       ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+        width: 6px;
+        height: 6px;
       }
       ::-webkit-scrollbar-track {
-        background: #050505; 
+        background: transparent; 
       }
       ::-webkit-scrollbar-thumb {
-        background: #27272a; 
-        border-radius: 4px;
+        background: #334155; 
+        border-radius: 10px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #3f3f46; 
+        background: #475569; 
       }
       
       /* PDF Capture Overrides */
@@ -140,7 +158,7 @@
       }
       .pdf-capture-mode * {
         color: black !important;
-        border-color: #e5e7eb !important;
+        border-color: #e2e8f0 !important;
       }
     </style>
   </head>
