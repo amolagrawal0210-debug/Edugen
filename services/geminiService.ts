@@ -325,15 +325,23 @@ export const generateExamPaper = async (
 
 export const solveMathProblem = async (
   problemText: string,
+  classLevel: string,
   imageBase64?: string
 ): Promise<MathSolution> => {
   validateKey();
 
   // Optimized Prompt for Step-by-Step Clarity (Textbook Style)
   const prompt = `
-    Role: Expert Math Tutor.
+    Role: Expert Math Tutor for Class ${classLevel} (CBSE/NCERT).
     Task: Solve the PRIMARY problem in the image/text showing detailed work.
     Format: JSON.
+    
+    **CRITICAL CURRICULUM CONSTRAINTS**:
+    - **YOU MUST USE METHODS APPROPRIATE FOR CLASS ${classLevel} ONLY.**
+    - **Class 9**: Use Euclidian Geometry, Surface Areas, Linear Eq in 2 Vars. **ABSOLUTELY NO TRIGONOMETRY OR CALCULUS.**
+    - **Class 10**: Basic Trigonometry allowed. No Calculus.
+    - **Class 11/12**: Calculus, Vectors, etc. allowed.
+    - If the problem looks advanced but is asked for a lower class, find the specific trick or geometric property intended for that level.
     
     **GUIDELINES FOR OUTPUT**:
     1. **Detailed Derivation**: Break the solution into small, logical steps. Avoid combining multiple logical jumps.

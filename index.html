@@ -30,35 +30,55 @@
         theme: {
           extend: {
             colors: {
-              // Dynamic Base Colors mapped to CSS Variables
-              black: 'rgb(var(--color-bg) / <alpha-value>)',
-              white: 'rgb(var(--color-text) / <alpha-value>)',
+              background: '#050505', // Almost black
+              surface: '#0f0f11', // Dark grey
               
-              // EduGen Specific Brand Colors
-              edu: {
-                primary: '#16a34a', // Green-600
-                dark: 'rgb(var(--color-sidebar) / <alpha-value>)',
-                card: 'rgb(var(--color-card) / <alpha-value>)',
-                border: 'rgb(var(--color-border) / <alpha-value>)',
-                accent: '#15803d', // Green-700
+              // New Vibrant Brand Colors
+              primary: {
+                DEFAULT: '#10b981', // Emerald 500
+                glow: '#34d399', // Emerald 400
+                dark: '#059669', // Emerald 600
+                20: 'rgba(16, 185, 129, 0.2)',
+              },
+              accent: {
+                DEFAULT: '#8b5cf6', // Violet 500
+                glow: '#a78bfa',
               },
               
-              // Dynamic Neutrals for standard Tailwind classes
-              neutral: {
-                800: 'rgb(var(--color-neutral-800) / <alpha-value>)',
-                900: 'rgb(var(--color-neutral-900) / <alpha-value>)',
+              // Glass Colors
+              glass: {
+                border: 'rgba(255, 255, 255, 0.08)',
+                surface: 'rgba(20, 20, 23, 0.6)', 
+                highlight: 'rgba(255, 255, 255, 0.05)',
               }
             },
             fontFamily: {
               sans: ['Inter', 'sans-serif'],
             },
             animation: {
-              'fade-in': 'fadeIn 0.5s ease-out',
+              'blob': 'blob 10s infinite',
+              'fade-in-up': 'fadeInUp 0.5s ease-out forwards',
+              'pulse-glow': 'pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'float': 'float 6s ease-in-out infinite',
             },
             keyframes: {
-              fadeIn: {
-                '0%': { opacity: '0', transform: 'translateY(10px)' },
+              blob: {
+                '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                '100%': { transform: 'translate(0px, 0px) scale(1)' },
+              },
+              fadeInUp: {
+                '0%': { opacity: '0', transform: 'translateY(20px)' },
                 '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              pulseGlow: {
+                '0%, 100%': { opacity: '1', boxShadow: '0 0 20px rgba(16, 185, 129, 0.4)' },
+                '50%': { opacity: '.7', boxShadow: '0 0 10px rgba(16, 185, 129, 0.1)' },
+              },
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-10px)' },
               }
             }
           },
@@ -66,45 +86,61 @@
       }
     </script>
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
-
-      :root {
-        /* Default Dark Theme */
-        --color-bg: 0 0 0;           /* Black */
-        --color-text: 255 255 255;   /* White */
-        
-        --color-sidebar: 5 5 5;      /* Very Dark Gray */
-        --color-card: 23 23 23;      /* Neutral 900 */
-        --color-border: 64 64 64;    /* Neutral 700 */
-        
-        --color-neutral-800: 38 38 38;
-        --color-neutral-900: 23 23 23;
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+      
+      body {
+        background-color: #050505;
+        color: #fafafa;
+        overflow-x: hidden;
       }
 
-      body.light-mode {
-        /* Light Theme Overrides */
-        --color-bg: 249 250 251;     /* Gray 50 */
-        --color-text: 17 24 39;      /* Gray 900 */
-        
-        --color-sidebar: 255 255 255; /* White */
-        --color-card: 255 255 255;    /* White */
-        --color-border: 229 231 235;  /* Gray 200 */
-        
-        --color-neutral-800: 243 244 246; /* Gray 100 */
-        --color-neutral-900: 255 255 255; /* White */
-      }
-
-      /* Transitions for smooth theme switching */
-      body, div, nav, aside, input, select, button, textarea {
-        transition-property: background-color, border-color, color, fill, stroke;
-        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-        transition-duration: 200ms;
+      /* Glassmorphism Classes */
+      .glass-panel {
+        background: rgba(20, 20, 23, 0.4);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
       }
       
-      /* PDF Capture Mode Overrides */
+      .glass-input {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(4px);
+        transition: all 0.3s ease;
+      }
+      .glass-input:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 1px #10b981;
+        background: rgba(0, 0, 0, 0.5);
+      }
+
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #050505; 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #27272a; 
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #3f3f46; 
+      }
+      
+      /* PDF Capture Overrides */
       .pdf-capture-mode {
-        background-color: white !important;
+        background: white !important;
         color: black !important;
+        backdrop-filter: none !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      .pdf-capture-mode * {
+        color: black !important;
+        border-color: #e5e7eb !important;
       }
     </style>
   </head>

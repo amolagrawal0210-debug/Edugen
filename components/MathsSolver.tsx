@@ -1,19 +1,20 @@
-
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { solveMathProblem } from '../services/geminiService';
 import { MathSolution } from '../types';
-import { Button, Card, LoadingSpinner, Accordion } from './UIComponents';
-import { Calculator, Upload, Image as ImageIcon, AlertTriangle, Lightbulb, ScanLine, Camera, X, Crop, MousePointer2, CheckCircle, ListOrdered, Sparkles } from 'lucide-react';
+import { Button, Card, Accordion } from './UIComponents';
+import { Calculator, ImageIcon, AlertTriangle, Lightbulb, ScanLine, Camera, X, Crop, CheckCircle, ListOrdered, Sparkles, UploadCloud } from 'lucide-react';
 
-const MathsSolver: React.FC = () => {
+interface MathsSolverProps {
+  classLevel: string;
+}
+
+const MathsSolver: React.FC<MathsSolverProps> = ({ classLevel }) => {
   const [problemText, setProblemText] = useState('');
   const [image, setImage] = useState<string | null>(null);
   const [solution, setSolution] = useState<MathSolution | null>(null);
   const [loading, setLoading] = useState(false);
-  
-  // Cropper State
   const [showCropper, setShowCropper] = useState(false);
-  const [tempImage, setTempImage] = useState<string | null>(null); // Raw base64
+  const [tempImage, setTempImage] = useState<string | null>(null);
   const [cropRect, setCropRect] = useState<{x: number, y: number, w: number, h: number} | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
@@ -28,10 +29,7 @@ const MathsSolver: React.FC = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64String = reader.result as string;
-        // Keep the raw base64 data separate from the Data URL for logic
         const base64Data = base64String.split(',')[1]; 
-        
-        // AUTO TRIGGER LOGIC: Open cropper immediately for precision
         setTempImage(base64Data);
         setShowCropper(true);
       };
@@ -51,7 +49,7 @@ const MathsSolver: React.FC = () => {
     setLoading(true);
     setSolution(null);
     try {
-      const result = await solveMathProblem(textToUse || '', imageToUse || undefined);
+      const result = await solveMathProblem(textToUse || '', classLevel, imageToUse || undefined);
       setSolution(result);
     } catch (error: any) {
       alert(error.message || "Failed to solve problem. Try again.");
@@ -67,8 +65,7 @@ const MathsSolver: React.FC = () => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // --- Cropper Logic ---
-
+  // Cropper Logic
   const getClientCoordinates = (e: React.MouseEvent | React.TouchEvent) => {
     if ('touches' in e) {
       return { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -79,13 +76,10 @@ const MathsSolver: React.FC = () => {
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     if (!containerRef.current) return;
     e.preventDefault(); 
-    
     const rect = containerRef.current.getBoundingClientRect();
     const { x: clientX, y: clientY } = getClientCoordinates(e);
-    
     const x = clientX - rect.left;
     const y = clientY - rect.top;
-    
     setIsDragging(true);
     setStartPos({ x, y });
     setCropRect({ x, y, w: 0, h: 0 });
@@ -94,86 +88,63 @@ const MathsSolver: React.FC = () => {
   const handleMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isDragging || !containerRef.current) return;
     e.preventDefault();
-
     const rect = containerRef.current.getBoundingClientRect();
     const { x: clientX, y: clientY } = getClientCoordinates(e);
-    
     const currentX = Math.max(0, Math.min(clientX - rect.left, rect.width));
     const currentY = Math.max(0, Math.min(clientY - rect.top, rect.height));
-    
     const newX = Math.min(startPos.x, currentX);
     const newY = Math.min(startPos.y, currentY);
     const newW = Math.abs(currentX - startPos.x);
     const newH = Math.abs(currentY - startPos.y);
-
     setCropRect({ x: newX, y: newY, w: newW, h: newH });
   };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
+  const handleMouseUp = () => { setIsDragging(false); };
 
   const performCropAndSolve = () => {
     if (!imageRef.current || !cropRect || !tempImage) return;
-
-    // 1. Calculate scaling ratio
     const naturalWidth = imageRef.current.naturalWidth;
     const displayedWidth = imageRef.current.clientWidth;
     const scale = naturalWidth / displayedWidth;
-
-    // 2. Create Canvas
     const canvas = document.createElement('canvas');
     canvas.width = cropRect.w * scale;
     canvas.height = cropRect.h * scale;
     const ctx = canvas.getContext('2d');
-
     if (!ctx) return;
-
-    // 3. Draw cropped image
     const sourceImage = new Image();
     sourceImage.onload = () => {
-      ctx.drawImage(
-        sourceImage,
-        cropRect.x * scale, cropRect.y * scale, cropRect.w * scale, cropRect.h * scale, // Source
-        0, 0, canvas.width, canvas.height // Dest
-      );
-      
-      // 4. Get Data URL and Solve
+      ctx.drawImage(sourceImage, cropRect.x * scale, cropRect.y * scale, cropRect.w * scale, cropRect.h * scale, 0, 0, canvas.width, canvas.height);
       const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
       const croppedBase64 = croppedDataUrl.split(',')[1];
-      
-      setImage(croppedBase64); // Show the cropped version in main UI
+      setImage(croppedBase64); 
       setShowCropper(false);
-      
-      // AUTO TRIGGER SOLVE
       handleSolveInternal(undefined, croppedBase64);
     };
     sourceImage.src = `data:image/png;base64,${tempImage}`;
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <Card className="border-t-4 border-t-edu-primary relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4 opacity-10">
-           <Calculator size={100} />
+    <div className="space-y-8 max-w-4xl mx-auto animate-fade-in-up">
+      <Card className="relative overflow-hidden border-t-4 border-t-blue-500">
+        <div className="absolute top-0 right-0 p-8 opacity-10">
+           <Calculator size={120} className="text-blue-500 rotate-12" />
         </div>
         
-        <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 relative z-10">
-          <Calculator className="text-edu-primary" />
-          AI Maths Solver
+        <h2 className="text-3xl font-black mb-8 flex items-center gap-3 relative z-10">
+          <span className="bg-blue-500/20 p-2 rounded-lg text-blue-400"><Calculator size={24} /></span>
+          AI Solver
         </h2>
         
         <div className="space-y-6 relative z-10">
-          {/* Main Input Area */}
-          <div className="bg-black/40 p-4 rounded-xl border border-neutral-800">
+          <div className="glass-input p-1 rounded-2xl border border-white/10 shadow-inner">
             <textarea
-              className="w-full bg-transparent border-none text-white placeholder-neutral-500 focus:ring-0 resize-none h-24 text-lg"
-              placeholder="e.g. Integrate x^2 sin(x) dx"
+              className="w-full bg-transparent border-none text-white placeholder-gray-500 focus:ring-0 resize-none h-32 text-lg p-4 font-medium"
+              placeholder="Type your math problem here (e.g., Integrate x^2 sin(x) dx)..."
               value={problemText}
               onChange={(e) => setProblemText(e.target.value)}
             />
             
-            <div className="flex justify-between items-center mt-4 pt-4 border-t border-neutral-800">
+            <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl mt-1">
                <div className="flex items-center gap-2">
                   <input 
                     type="file" 
@@ -184,24 +155,24 @@ const MathsSolver: React.FC = () => {
                   />
                   <button 
                     onClick={() => fileInputRef.current?.click()}
-                    className="text-white bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-all shadow-lg shadow-indigo-500/20"
+                    className="text-white bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-all border border-white/10"
                   >
-                    <Camera size={16} /> Snap/Upload Problem
+                    <Camera size={16} /> Snap Photo
                   </button>
                   
                   {image && (
-                    <div className="flex items-center gap-2 bg-neutral-800 px-3 py-1.5 rounded-full border border-neutral-700 ml-2 animate-fade-in">
-                      <ImageIcon size={14} className="text-edu-primary" />
-                      <span className="text-xs text-white">Image Ready</span>
-                      <button onClick={clearImage} className="text-gray-500 hover:text-red-400">
+                    <div className="flex items-center gap-2 bg-blue-500/20 px-3 py-1.5 rounded-full border border-blue-500/30 ml-2 animate-fade-in-up">
+                      <ImageIcon size={14} className="text-blue-400" />
+                      <span className="text-xs text-blue-200 font-bold">Image Ready</span>
+                      <button onClick={clearImage} className="text-blue-300 hover:text-white">
                         <X size={14} />
                       </button>
                     </div>
                   )}
                </div>
                
-               <Button onClick={() => handleSolve()} disabled={loading || (!problemText && !image)} className="px-8">
-                 {loading ? 'Analyzing...' : 'Solve Problem'}
+               <Button onClick={() => handleSolve()} disabled={loading || (!problemText && !image)} className="px-8 shadow-lg hover:shadow-blue-500/20">
+                 {loading ? 'Thinking...' : 'Solve'}
                </Button>
             </div>
           </div>
@@ -210,18 +181,17 @@ const MathsSolver: React.FC = () => {
 
       {/* Cropper Modal */}
       {showCropper && tempImage && (
-        <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-4 animate-in fade-in duration-300">
           <div className="w-full max-w-lg mb-4 flex justify-between items-center text-white">
              <div>
-                <h3 className="font-bold text-lg flex items-center gap-2"><Crop size={20} className="text-indigo-400"/> Crop Problem</h3>
-                <p className="text-xs text-gray-400">Select the specific question to solve.</p>
+                <h3 className="font-bold text-lg flex items-center gap-2 text-primary"><Crop size={20}/> Crop Problem</h3>
              </div>
              <button onClick={() => setShowCropper(false)} className="p-2 hover:bg-white/10 rounded-full"><X /></button>
           </div>
           
           <div 
              ref={containerRef}
-             className="relative border-2 border-white/20 touch-none select-none cursor-crosshair overflow-hidden rounded-lg bg-neutral-900"
+             className="relative border border-white/20 touch-none select-none cursor-crosshair overflow-hidden rounded-xl bg-neutral-900 shadow-2xl"
              onMouseDown={handleMouseDown}
              onMouseMove={handleMouseMove}
              onMouseUp={handleMouseUp}
@@ -241,7 +211,7 @@ const MathsSolver: React.FC = () => {
                    }, 50);
                }}
              />
-             <div className="absolute inset-0 bg-black/50 pointer-events-none" 
+             <div className="absolute inset-0 bg-black/60 pointer-events-none" 
                   style={{
                     clipPath: cropRect && cropRect.w > 0 
                       ? `polygon(0% 0%, 0% 100%, ${cropRect.x}px 100%, ${cropRect.x}px ${cropRect.y}px, ${cropRect.x + cropRect.w}px ${cropRect.y}px, ${cropRect.x + cropRect.w}px ${cropRect.y + cropRect.h}px, ${cropRect.x}px ${cropRect.y + cropRect.h}px, ${cropRect.x}px 100%, 100% 100%, 100% 0%)`
@@ -250,64 +220,51 @@ const MathsSolver: React.FC = () => {
              </div>
              {cropRect && cropRect.w > 0 && (
                <div 
-                 className="absolute border-2 border-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.5)] bg-transparent pointer-events-none"
-                 style={{
-                   left: cropRect.x,
-                   top: cropRect.y,
-                   width: cropRect.w,
-                   height: cropRect.h
-                 }}
+                 className="absolute border-2 border-primary shadow-[0_0_20px_rgba(16,185,129,0.5)] bg-transparent pointer-events-none"
+                 style={{ left: cropRect.x, top: cropRect.y, width: cropRect.w, height: cropRect.h }}
                />
              )}
           </div>
           
           <div className="mt-6 flex gap-4 w-full max-w-lg">
              <Button variant="secondary" className="flex-1" onClick={() => setShowCropper(false)}>Cancel</Button>
-             <Button className="flex-[2] bg-indigo-600 hover:bg-indigo-500" onClick={performCropAndSolve}>
-               Analyze Selection
-             </Button>
+             <Button className="flex-[2]" onClick={performCropAndSolve}>Analyze</Button>
           </div>
         </div>
       )}
 
-      {/* Loading State */}
       {loading && !showCropper && (
-         <div className="flex flex-col items-center justify-center p-12 bg-neutral-900/50 rounded-xl border border-neutral-800 animate-pulse">
+         <div className="flex flex-col items-center justify-center p-12 glass-panel rounded-2xl">
             <div className="relative">
-               <div className="absolute inset-0 bg-edu-primary blur-xl opacity-20 animate-pulse"></div>
-               <ScanLine size={48} className="text-edu-primary relative z-10 animate-bounce" />
+               <div className="absolute inset-0 bg-blue-500 blur-2xl opacity-20 animate-pulse"></div>
+               <ScanLine size={56} className="text-blue-400 relative z-10 animate-bounce" />
             </div>
-            <h3 className="text-white font-bold mt-6 text-xl">Analyzing Problem...</h3>
-            <p className="text-gray-400 text-sm mt-2">Identifying numbers, symbols & logic</p>
+            <h3 className="text-white font-bold mt-8 text-xl tracking-tight">Deconstructing...</h3>
          </div>
       )}
 
-      {/* Results */}
       {solution && !loading && (
-        <div className="animate-fade-in space-y-4">
-          
-          {/* 1. Final Answer Accordion */}
+        <div className="animate-fade-in-up space-y-4">
           <Accordion title="Final Answer" defaultOpen={true} icon={<CheckCircle size={18} />}>
-            <div className="text-center py-4">
-               <div className="inline-block bg-green-900/20 text-green-400 text-2xl font-black px-8 py-4 rounded-xl border border-green-800 shadow-lg">
+            <div className="text-center py-6">
+               <div className="inline-block bg-gradient-to-br from-green-500/20 to-emerald-600/10 text-emerald-400 text-3xl font-black px-10 py-6 rounded-2xl border border-emerald-500/30 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
                   {solution.finalAnswer}
                </div>
-               <p className="text-gray-400 mt-2 text-sm">{solution.problemStatement}</p>
+               <p className="text-gray-400 mt-4 text-sm font-medium">{solution.problemStatement}</p>
             </div>
           </Accordion>
 
-          {/* 2. Step-by-Step Accordion */}
-          <Accordion title="Step-by-Step CBSE Method" defaultOpen={true} icon={<ListOrdered size={18} />}>
-            <div className="space-y-6 px-2">
+          <Accordion title="Step-by-Step Method" defaultOpen={true} icon={<ListOrdered size={18} />}>
+            <div className="space-y-8 px-4 py-2">
                 {solution.steps.map((step, idx) => (
-                  <div key={idx} className="relative pl-6 border-l-2 border-neutral-700 hover:border-edu-primary transition-colors pb-2">
-                      <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-neutral-900 border-2 border-edu-primary"></div>
+                  <div key={idx} className="relative pl-8 border-l-2 border-white/10 pb-2 group">
+                      <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-surface border-2 border-blue-500 group-hover:scale-125 transition-transform"></div>
                       
-                      <h4 className="font-bold text-white text-lg mb-1 leading-none">{step.stepTitle}</h4>
-                      <p className="text-gray-400 mb-3 text-sm">{step.description}</p>
+                      <h4 className="font-bold text-white text-lg mb-2 leading-none">{step.stepTitle}</h4>
+                      <p className="text-gray-400 mb-4 text-sm leading-relaxed">{step.description}</p>
                       
                       {step.equation && (
-                        <div className="bg-neutral-800 p-3 rounded-lg border border-neutral-700 font-mono text-lg text-center text-green-300 my-2 overflow-x-auto">
+                        <div className="glass-panel p-4 rounded-xl border border-white/10 font-mono text-lg text-center text-blue-300 overflow-x-auto shadow-inner bg-black/30">
                           {step.equation}
                         </div>
                       )}
@@ -316,32 +273,30 @@ const MathsSolver: React.FC = () => {
             </div>
           </Accordion>
 
-          {/* 3. AI Insight Accordion */}
-          <Accordion title="AI Insight & Coaching Tips" defaultOpen={false} icon={<Sparkles size={18} />}>
+          <Accordion title="AI Insight & Tips" defaultOpen={false} icon={<Sparkles size={18} />}>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="text-yellow-500 font-bold mb-3 flex items-center gap-2"><Lightbulb size={16}/> Key Concepts</h4>
-                  <ul className="space-y-2">
+                <div className="glass-panel p-4 rounded-xl border-l-2 border-l-yellow-500 bg-yellow-500/5">
+                  <h4 className="text-yellow-400 font-bold mb-3 flex items-center gap-2"><Lightbulb size={16}/> Key Concepts</h4>
+                  <ul className="space-y-3">
                     {solution.keyTips.map((tip, i) => (
                       <li key={i} className="flex gap-2 text-gray-300 text-sm">
-                        <span className="text-yellow-500">•</span> {tip}
+                        <span className="text-yellow-500 mt-1">•</span> {tip}
                       </li>
                     ))}
                   </ul>
                 </div>
-                <div>
-                  <h4 className="text-red-400 font-bold mb-3 flex items-center gap-2"><AlertTriangle size={16}/> Common Mistakes</h4>
-                  <ul className="space-y-2">
+                <div className="glass-panel p-4 rounded-xl border-l-2 border-l-rose-500 bg-rose-500/5">
+                  <h4 className="text-rose-400 font-bold mb-3 flex items-center gap-2"><AlertTriangle size={16}/> Common Mistakes</h4>
+                  <ul className="space-y-3">
                     {solution.commonErrors.map((err, i) => (
                       <li key={i} className="flex gap-2 text-gray-300 text-sm">
-                        <span className="text-red-500">•</span> {err}
+                        <span className="text-rose-500 mt-1">•</span> {err}
                       </li>
                     ))}
                   </ul>
                 </div>
              </div>
           </Accordion>
-
         </div>
       )}
     </div>
