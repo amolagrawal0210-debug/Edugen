@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { solveMathProblem } from '../services/geminiService';
 import { MathSolution } from '../types';
 import { Button, Card, Accordion } from './UIComponents';
-import { Calculator, ImageIcon, AlertTriangle, Lightbulb, ScanLine, Camera, X, Crop, CheckCircle, ListOrdered, Sparkles, UploadCloud } from 'lucide-react';
+import { Calculator, ImageIcon, AlertTriangle, Lightbulb, ScanLine, Camera, X, Crop, CheckCircle, ListOrdered, Sparkles, RefreshCcw } from 'lucide-react';
 
 interface MathsSolverProps {
   classLevel: string;
@@ -29,6 +29,7 @@ const MathsSolver: React.FC<MathsSolverProps> = ({ classLevel }) => {
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64String = reader.result as string;
+        // Keep only data part
         const base64Data = base64String.split(',')[1]; 
         setTempImage(base64Data);
         setShowCropper(true);
@@ -65,7 +66,8 @@ const MathsSolver: React.FC<MathsSolverProps> = ({ classLevel }) => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // Cropper Logic
+  // --- Robust Cropper Logic ---
+
   const getClientCoordinates = (e: React.MouseEvent | React.TouchEvent) => {
     if ('touches' in e) {
       return { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -75,11 +77,16 @@ const MathsSolver: React.FC<MathsSolverProps> = ({ classLevel }) => {
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     if (!containerRef.current) return;
-    e.preventDefault(); 
+    // Prevent default to stop scrolling on mobile while cropping
+    if (e.cancelable) e.preventDefault(); 
+    
     const rect = containerRef.current.getBoundingClientRect();
     const { x: clientX, y: clientY } = getClientCoordinates(e);
+    
+    // Calculate relative coordinates strictly within container
     const x = clientX - rect.left;
     const y = clientY - rect.top;
+    
     setIsDragging(true);
     setStartPos({ x, y });
     setCropRect({ x, y, w: 0, h: 0 });
@@ -87,35 +94,72 @@ const MathsSolver: React.FC<MathsSolverProps> = ({ classLevel }) => {
 
   const handleMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isDragging || !containerRef.current) return;
-    e.preventDefault();
+    if (e.cancelable) e.preventDefault();
+
     const rect = containerRef.current.getBoundingClientRect();
     const { x: clientX, y: clientY } = getClientCoordinates(e);
+
+    // Constrain coordinates to container bounds
     const currentX = Math.max(0, Math.min(clientX - rect.left, rect.width));
     const currentY = Math.max(0, Math.min(clientY - rect.top, rect.height));
+
     const newX = Math.min(startPos.x, currentX);
     const newY = Math.min(startPos.y, currentY);
     const newW = Math.abs(currentX - startPos.x);
     const newH = Math.abs(currentY - startPos.y);
+
     setCropRect({ x: newX, y: newY, w: newW, h: newH });
   };
 
-  const handleMouseUp = () => { setIsDragging(false); };
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const resetCrop = () => {
+    if (imageRef.current) {
+      setCropRect({ x: 0, y: 0, w: imageRef.current.clientWidth, h: imageRef.current.clientHeight });
+    }
+  };
 
   const performCropAndSolve = () => {
     if (!imageRef.current || !cropRect || !tempImage) return;
+
+    // Handle case where user just clicks without dragging (select full image)
+    if (cropRect.w === 0 || cropRect.h === 0) {
+       setImage(tempImage);
+       setShowCropper(false);
+       handleSolveInternal(undefined, tempImage);
+       return;
+    }
+
     const naturalWidth = imageRef.current.naturalWidth;
     const displayedWidth = imageRef.current.clientWidth;
     const scale = naturalWidth / displayedWidth;
+
     const canvas = document.createElement('canvas');
     canvas.width = cropRect.w * scale;
     canvas.height = cropRect.h * scale;
+    
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
     const sourceImage = new Image();
     sourceImage.onload = () => {
-      ctx.drawImage(sourceImage, cropRect.x * scale, cropRect.y * scale, cropRect.w * scale, cropRect.h * scale, 0, 0, canvas.width, canvas.height);
-      const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      ctx.drawImage(
+        sourceImage, 
+        cropRect.x * scale, 
+        cropRect.y * scale, 
+        cropRect.w * scale, 
+        cropRect.h * scale, 
+        0, 
+        0, 
+        canvas.width, 
+        canvas.height
+      );
+      
+      const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
       const croppedBase64 = croppedDataUrl.split(',')[1];
+      
       setImage(croppedBase64); 
       setShowCropper(false);
       handleSolveInternal(undefined, croppedBase64);
@@ -179,56 +223,80 @@ const MathsSolver: React.FC<MathsSolverProps> = ({ classLevel }) => {
         </div>
       </Card>
 
-      {/* Cropper Modal */}
+      {/* Improved Cropper Modal */}
       {showCropper && tempImage && (
         <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className="w-full max-w-lg mb-4 flex justify-between items-center text-white">
+          <div className="w-full max-w-4xl mb-4 flex justify-between items-center text-white">
              <div>
                 <h3 className="font-bold text-lg flex items-center gap-2 text-primary"><Crop size={20}/> Crop Problem</h3>
+                <p className="text-xs text-gray-400">Drag to select the question</p>
              </div>
-             <button onClick={() => setShowCropper(false)} className="p-2 hover:bg-white/10 rounded-full"><X /></button>
+             <div className="flex gap-2">
+               <button onClick={resetCrop} className="p-2 hover:bg-white/10 rounded-full text-gray-400 hover:text-white" title="Reset Selection">
+                 <RefreshCcw size={18} />
+               </button>
+               <button onClick={() => setShowCropper(false)} className="p-2 hover:bg-white/10 rounded-full text-gray-400 hover:text-white">
+                 <X size={20} />
+               </button>
+             </div>
           </div>
           
-          <div 
-             ref={containerRef}
-             className="relative border border-white/20 touch-none select-none cursor-crosshair overflow-hidden rounded-xl bg-neutral-900 shadow-2xl"
-             onMouseDown={handleMouseDown}
-             onMouseMove={handleMouseMove}
-             onMouseUp={handleMouseUp}
-             onMouseLeave={handleMouseUp}
-             onTouchStart={handleMouseDown}
-             onTouchMove={handleMouseMove}
-             onTouchEnd={handleMouseUp}
-          >
-             <img 
-               ref={imageRef}
-               src={`data:image/png;base64,${tempImage}`} 
-               className="max-h-[60vh] max-w-full object-contain pointer-events-none"
-               onLoad={(e) => {
+          <div className="w-full max-w-4xl flex justify-center bg-black/50 p-2 rounded-xl border border-white/10 overflow-hidden relative">
+            <div 
+               ref={containerRef}
+               className="relative w-fit h-fit max-w-full touch-none select-none cursor-crosshair shadow-2xl"
+               style={{ maxWidth: '100%' }}
+               onMouseDown={handleMouseDown}
+               onMouseMove={handleMouseMove}
+               onMouseUp={handleMouseUp}
+               onMouseLeave={handleMouseUp}
+               onTouchStart={handleMouseDown}
+               onTouchMove={handleMouseMove}
+               onTouchEnd={handleMouseUp}
+            >
+               <img 
+                 ref={imageRef}
+                 src={`data:image/png;base64,${tempImage}`} 
+                 className="block max-h-[65vh] w-auto h-auto max-w-full object-contain pointer-events-none"
+                 draggable={false}
+                 onLoad={(e) => {
+                   // Initial full selection
                    const t = e.currentTarget;
                    setTimeout(() => {
                        if (t) setCropRect({ x: 0, y: 0, w: t.clientWidth, h: t.clientHeight });
-                   }, 50);
-               }}
-             />
-             <div className="absolute inset-0 bg-black/70 pointer-events-none" 
-                  style={{
-                    clipPath: cropRect && cropRect.w > 0 
-                      ? `polygon(0% 0%, 0% 100%, ${cropRect.x}px 100%, ${cropRect.x}px ${cropRect.y}px, ${cropRect.x + cropRect.w}px ${cropRect.y}px, ${cropRect.x + cropRect.w}px ${cropRect.y + cropRect.h}px, ${cropRect.x}px ${cropRect.y + cropRect.h}px, ${cropRect.x}px 100%, 100% 100%, 100% 0%)`
-                      : 'none'
-                  }}>
-             </div>
-             {cropRect && cropRect.w > 0 && (
-               <div 
-                 className="absolute border-2 border-primary shadow-[0_0_20px_rgba(16,185,129,0.5)] bg-transparent pointer-events-none"
-                 style={{ left: cropRect.x, top: cropRect.y, width: cropRect.w, height: cropRect.h }}
+                   }, 100);
+                 }}
                />
-             )}
+               
+               {/* Dark Overlay for non-selected areas */}
+               <div className="absolute inset-0 bg-black/60 pointer-events-none transition-all duration-75" 
+                    style={{
+                      clipPath: cropRect && cropRect.w > 0 
+                        ? `polygon(0% 0%, 0% 100%, ${cropRect.x}px 100%, ${cropRect.x}px ${cropRect.y}px, ${cropRect.x + cropRect.w}px ${cropRect.y}px, ${cropRect.x + cropRect.w}px ${cropRect.y + cropRect.h}px, ${cropRect.x}px ${cropRect.y + cropRect.h}px, ${cropRect.x}px 100%, 100% 100%, 100% 0%)`
+                        : 'none'
+                    }}>
+               </div>
+               
+               {/* Selection Border */}
+               {cropRect && cropRect.w > 0 && (
+                 <div 
+                   className="absolute border-2 border-primary shadow-[0_0_20px_rgba(16,185,129,0.5)] bg-transparent pointer-events-none z-10"
+                   style={{ left: cropRect.x, top: cropRect.y, width: cropRect.w, height: cropRect.h }}
+                 >
+                    <div className="absolute -top-1 -left-1 w-3 h-3 border-t-2 border-l-2 border-white bg-transparent"></div>
+                    <div className="absolute -top-1 -right-1 w-3 h-3 border-t-2 border-r-2 border-white bg-transparent"></div>
+                    <div className="absolute -bottom-1 -left-1 w-3 h-3 border-b-2 border-l-2 border-white bg-transparent"></div>
+                    <div className="absolute -bottom-1 -right-1 w-3 h-3 border-b-2 border-r-2 border-white bg-transparent"></div>
+                 </div>
+               )}
+            </div>
           </div>
           
-          <div className="mt-8 flex gap-4 w-full max-w-lg">
+          <div className="mt-6 flex gap-4 w-full max-w-lg">
              <Button variant="secondary" className="flex-1" onClick={() => setShowCropper(false)}>Cancel</Button>
-             <Button className="flex-[2]" onClick={performCropAndSolve}>Analyze</Button>
+             <Button className="flex-[2] shadow-[0_0_20px_rgba(16,185,129,0.4)]" onClick={performCropAndSolve}>
+               <CheckCircle size={18} className="mr-2" /> Analyze Problem
+             </Button>
           </div>
         </div>
       )}
