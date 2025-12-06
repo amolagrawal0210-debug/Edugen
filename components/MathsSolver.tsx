@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { solveMathProblem } from '../services/geminiService';
 import { MathSolution } from '../types';
 import { Button, Card, Accordion } from './UIComponents';
-import { Calculator, ImageIcon, AlertTriangle, Lightbulb, ScanLine, Camera, X, Crop, CheckCircle, ListOrdered, Sparkles, RefreshCcw } from 'lucide-react';
+import { Calculator, ImageIcon, AlertTriangle, Lightbulb, ScanLine, Camera, X, CheckCircle, ListOrdered, Sparkles } from 'lucide-react';
 
 interface MathsSolverProps {
   classLevel: string;
@@ -13,15 +13,8 @@ const MathsSolver: React.FC<MathsSolverProps> = ({ classLevel }) => {
   const [image, setImage] = useState<string | null>(null);
   const [solution, setSolution] = useState<MathSolution | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showCropper, setShowCropper] = useState(false);
-  const [tempImage, setTempImage] = useState<string | null>(null);
-  const [cropRect, setCropRect] = useState<{x: number, y: number, w: number, h: number} | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const imageRef = useRef<HTMLImageElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -31,18 +24,14 @@ const MathsSolver: React.FC<MathsSolverProps> = ({ classLevel }) => {
         const base64String = reader.result as string;
         // Keep only data part
         const base64Data = base64String.split(',')[1]; 
-        setTempImage(base64Data);
-        setShowCropper(true);
+        setImage(base64Data);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSolveInternal = async (textOverride?: string, imageOverride?: string) => {
-    const textToUse = textOverride !== undefined ? textOverride : problemText;
-    const imageToUse = imageOverride !== undefined ? imageOverride : image;
-
-    if (!textToUse && !imageToUse) {
+  const handleSolve = async () => {
+    if (!problemText && !image) {
       alert("Please enter a problem or upload an image.");
       return;
     }
@@ -50,7 +39,7 @@ const MathsSolver: React.FC<MathsSolverProps> = ({ classLevel }) => {
     setLoading(true);
     setSolution(null);
     try {
-      const result = await solveMathProblem(textToUse || '', classLevel, imageToUse || undefined);
+      const result = await solveMathProblem(problemText || '', classLevel, image || undefined);
       setSolution(result);
     } catch (error: any) {
       alert(error.message || "Failed to solve problem. Try again.");
@@ -59,112 +48,9 @@ const MathsSolver: React.FC<MathsSolverProps> = ({ classLevel }) => {
     }
   };
 
-  const handleSolve = () => handleSolveInternal();
-
   const clearImage = () => {
     setImage(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  // --- Robust Cropper Logic ---
-
-  const getClientCoordinates = (e: React.MouseEvent | React.TouchEvent) => {
-    if ('touches' in e) {
-      return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    }
-    return { x: (e as React.MouseEvent).clientX, y: (e as React.MouseEvent).clientY };
-  };
-
-  const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!containerRef.current) return;
-    // Prevent default to stop scrolling on mobile while cropping
-    if (e.cancelable) e.preventDefault(); 
-    
-    const rect = containerRef.current.getBoundingClientRect();
-    const { x: clientX, y: clientY } = getClientCoordinates(e);
-    
-    // Calculate relative coordinates strictly within container
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
-    
-    setIsDragging(true);
-    setStartPos({ x, y });
-    setCropRect({ x, y, w: 0, h: 0 });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDragging || !containerRef.current) return;
-    if (e.cancelable) e.preventDefault();
-
-    const rect = containerRef.current.getBoundingClientRect();
-    const { x: clientX, y: clientY } = getClientCoordinates(e);
-
-    // Constrain coordinates to container bounds
-    const currentX = Math.max(0, Math.min(clientX - rect.left, rect.width));
-    const currentY = Math.max(0, Math.min(clientY - rect.top, rect.height));
-
-    const newX = Math.min(startPos.x, currentX);
-    const newY = Math.min(startPos.y, currentY);
-    const newW = Math.abs(currentX - startPos.x);
-    const newH = Math.abs(currentY - startPos.y);
-
-    setCropRect({ x: newX, y: newY, w: newW, h: newH });
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const resetCrop = () => {
-    if (imageRef.current) {
-      setCropRect({ x: 0, y: 0, w: imageRef.current.clientWidth, h: imageRef.current.clientHeight });
-    }
-  };
-
-  const performCropAndSolve = () => {
-    if (!imageRef.current || !cropRect || !tempImage) return;
-
-    // Handle case where user just clicks without dragging (select full image)
-    if (cropRect.w === 0 || cropRect.h === 0) {
-       setImage(tempImage);
-       setShowCropper(false);
-       handleSolveInternal(undefined, tempImage);
-       return;
-    }
-
-    const naturalWidth = imageRef.current.naturalWidth;
-    const displayedWidth = imageRef.current.clientWidth;
-    const scale = naturalWidth / displayedWidth;
-
-    const canvas = document.createElement('canvas');
-    canvas.width = cropRect.w * scale;
-    canvas.height = cropRect.h * scale;
-    
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const sourceImage = new Image();
-    sourceImage.onload = () => {
-      ctx.drawImage(
-        sourceImage, 
-        cropRect.x * scale, 
-        cropRect.y * scale, 
-        cropRect.w * scale, 
-        cropRect.h * scale, 
-        0, 
-        0, 
-        canvas.width, 
-        canvas.height
-      );
-      
-      const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
-      const croppedBase64 = croppedDataUrl.split(',')[1];
-      
-      setImage(croppedBase64); 
-      setShowCropper(false);
-      handleSolveInternal(undefined, croppedBase64);
-    };
-    sourceImage.src = `data:image/png;base64,${tempImage}`;
   };
 
   return (
@@ -188,8 +74,8 @@ const MathsSolver: React.FC<MathsSolverProps> = ({ classLevel }) => {
               onChange={(e) => setProblemText(e.target.value)}
             />
             
-            <div className="flex justify-between items-center p-4 bg-white/5 rounded-xl mt-1">
-               <div className="flex items-center gap-3">
+            <div className="flex flex-col md:flex-row justify-between items-center p-4 bg-white/5 rounded-xl mt-1 gap-4">
+               <div className="flex items-center gap-3 w-full md:w-auto">
                   <input 
                     type="file" 
                     ref={fileInputRef}
@@ -199,116 +85,47 @@ const MathsSolver: React.FC<MathsSolverProps> = ({ classLevel }) => {
                   />
                   <button 
                     onClick={() => fileInputRef.current?.click()}
-                    className="text-white bg-white/10 hover:bg-white/20 px-5 py-2.5 rounded-lg flex items-center gap-2 text-sm transition-all border border-white/10 font-semibold"
+                    className="text-white bg-white/10 hover:bg-white/20 px-5 py-2.5 rounded-lg flex items-center gap-2 text-sm transition-all border border-white/10 font-semibold whitespace-nowrap"
                   >
-                    <Camera size={18} /> Snap Photo
+                    <Camera size={18} /> Upload Photo
                   </button>
                   
                   {image && (
-                    <div className="flex items-center gap-2 bg-blue-500/20 px-4 py-2 rounded-full border border-blue-500/30 ml-2 animate-fade-in-up">
-                      <ImageIcon size={14} className="text-blue-400" />
-                      <span className="text-xs text-blue-200 font-bold">Image Ready</span>
-                      <button onClick={clearImage} className="text-blue-300 hover:text-white">
-                        <X size={14} />
+                    <div className="relative group animate-fade-in-up">
+                      <div className="h-12 w-12 rounded-lg overflow-hidden border border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.3)]">
+                        <img 
+                          src={`data:image/png;base64,${image}`} 
+                          alt="Problem Preview" 
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                      <button 
+                        onClick={clearImage} 
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors transform hover:scale-110"
+                        title="Remove Image"
+                      >
+                        <X size={10} />
                       </button>
                     </div>
                   )}
                </div>
                
-               <Button onClick={() => handleSolve()} disabled={loading || (!problemText && !image)} className="px-10 shadow-lg hover:shadow-blue-500/20">
-                 {loading ? 'Thinking...' : 'Solve'}
+               <Button onClick={handleSolve} disabled={loading || (!problemText && !image)} className="w-full md:w-auto px-10 shadow-lg hover:shadow-blue-500/20">
+                 {loading ? 'Thinking...' : 'Solve Problem'}
                </Button>
             </div>
           </div>
         </div>
       </Card>
 
-      {/* Improved Cropper Modal */}
-      {showCropper && tempImage && (
-        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className="w-full max-w-4xl mb-4 flex justify-between items-center text-white">
-             <div>
-                <h3 className="font-bold text-lg flex items-center gap-2 text-primary"><Crop size={20}/> Crop Problem</h3>
-                <p className="text-xs text-gray-400">Drag to select the question</p>
-             </div>
-             <div className="flex gap-2">
-               <button onClick={resetCrop} className="p-2 hover:bg-white/10 rounded-full text-gray-400 hover:text-white" title="Reset Selection">
-                 <RefreshCcw size={18} />
-               </button>
-               <button onClick={() => setShowCropper(false)} className="p-2 hover:bg-white/10 rounded-full text-gray-400 hover:text-white">
-                 <X size={20} />
-               </button>
-             </div>
-          </div>
-          
-          <div className="w-full max-w-4xl flex justify-center bg-black/50 p-2 rounded-xl border border-white/10 overflow-hidden relative">
-            <div 
-               ref={containerRef}
-               className="relative w-fit h-fit max-w-full touch-none select-none cursor-crosshair shadow-2xl"
-               style={{ maxWidth: '100%' }}
-               onMouseDown={handleMouseDown}
-               onMouseMove={handleMouseMove}
-               onMouseUp={handleMouseUp}
-               onMouseLeave={handleMouseUp}
-               onTouchStart={handleMouseDown}
-               onTouchMove={handleMouseMove}
-               onTouchEnd={handleMouseUp}
-            >
-               <img 
-                 ref={imageRef}
-                 src={`data:image/png;base64,${tempImage}`} 
-                 className="block max-h-[65vh] w-auto h-auto max-w-full object-contain pointer-events-none"
-                 draggable={false}
-                 onLoad={(e) => {
-                   // Initial full selection
-                   const t = e.currentTarget;
-                   setTimeout(() => {
-                       if (t) setCropRect({ x: 0, y: 0, w: t.clientWidth, h: t.clientHeight });
-                   }, 100);
-                 }}
-               />
-               
-               {/* Dark Overlay for non-selected areas */}
-               <div className="absolute inset-0 bg-black/60 pointer-events-none transition-all duration-75" 
-                    style={{
-                      clipPath: cropRect && cropRect.w > 0 
-                        ? `polygon(0% 0%, 0% 100%, ${cropRect.x}px 100%, ${cropRect.x}px ${cropRect.y}px, ${cropRect.x + cropRect.w}px ${cropRect.y}px, ${cropRect.x + cropRect.w}px ${cropRect.y + cropRect.h}px, ${cropRect.x}px ${cropRect.y + cropRect.h}px, ${cropRect.x}px 100%, 100% 100%, 100% 0%)`
-                        : 'none'
-                    }}>
-               </div>
-               
-               {/* Selection Border */}
-               {cropRect && cropRect.w > 0 && (
-                 <div 
-                   className="absolute border-2 border-primary shadow-[0_0_20px_rgba(16,185,129,0.5)] bg-transparent pointer-events-none z-10"
-                   style={{ left: cropRect.x, top: cropRect.y, width: cropRect.w, height: cropRect.h }}
-                 >
-                    <div className="absolute -top-1 -left-1 w-3 h-3 border-t-2 border-l-2 border-white bg-transparent"></div>
-                    <div className="absolute -top-1 -right-1 w-3 h-3 border-t-2 border-r-2 border-white bg-transparent"></div>
-                    <div className="absolute -bottom-1 -left-1 w-3 h-3 border-b-2 border-l-2 border-white bg-transparent"></div>
-                    <div className="absolute -bottom-1 -right-1 w-3 h-3 border-b-2 border-r-2 border-white bg-transparent"></div>
-                 </div>
-               )}
-            </div>
-          </div>
-          
-          <div className="mt-6 flex gap-4 w-full max-w-lg">
-             <Button variant="secondary" className="flex-1" onClick={() => setShowCropper(false)}>Cancel</Button>
-             <Button className="flex-[2] shadow-[0_0_20px_rgba(16,185,129,0.4)]" onClick={performCropAndSolve}>
-               <CheckCircle size={18} className="mr-2" /> Analyze Problem
-             </Button>
-          </div>
-        </div>
-      )}
-
-      {loading && !showCropper && (
-         <div className="flex flex-col items-center justify-center p-16 glass-panel rounded-2xl bg-black/40">
+      {loading && (
+         <div className="flex flex-col items-center justify-center p-16 glass-panel rounded-2xl bg-black/40 animate-fade-in-up">
             <div className="relative mb-8">
                <div className="absolute inset-0 bg-blue-500 blur-3xl opacity-30 animate-pulse"></div>
                <ScanLine size={64} className="text-blue-400 relative z-10 animate-bounce" />
             </div>
-            <h3 className="text-white font-bold text-2xl tracking-tight">Deconstructing...</h3>
-            <p className="text-gray-400 mt-2">Identifying mathematical patterns</p>
+            <h3 className="text-white font-bold text-2xl tracking-tight">Analyzing Problem...</h3>
+            <p className="text-gray-400 mt-2">Identifying mathematical patterns and logic</p>
          </div>
       )}
 
